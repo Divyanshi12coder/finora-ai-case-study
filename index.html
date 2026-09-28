@@ -1,0 +1,1611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="docs/images/logo.svg">
+<title>Finora Case Study</title>
+<meta name="description" content="Engineering case study: an AI-powered personal finance platform where the backend computes every number and the AI only explains it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap">
+<style>
+:root{
+  --bg:#F4F7FA; --surface:#FFFFFF; --surface-2:#EDF1F7; --ink:#172033; --ink-2:#3B4A63; --muted:#64748B;
+  --line:#DCE3EE; --line-strong:#C3CEDF;
+  --navy:#0B1F3A; --navy-2:#132B4F; --on-navy:#FFFFFF; --on-navy-2:#AFC0DA;
+  --red:#E63946; --red-ink:#C62835; --red-soft:#FFE5E7;
+  --good:#16775A; --good-soft:#E2F3EC; --warn:#9A5B06; --warn-soft:#FBF0DC; --blue-soft:#E3ECF9; --blue-ink:#1D4F91;
+  --code-bg:#0B1F3A; --code-ink:#DCE5F4;
+  --shadow:0 1px 2px rgba(11,31,58,.06),0 18px 40px -18px rgba(11,31,58,.28);
+  --shadow-lg:0 2px 4px rgba(11,31,58,.08),0 40px 80px -30px rgba(11,31,58,.45);
+  --glass:rgba(244,247,250,.74);
+  --f-display:"Plus Jakarta Sans",Inter,system-ui,sans-serif;
+  --f-body:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#06111F; --surface:#0B1B30; --surface-2:#10243F; --ink:#E7EDF6; --ink-2:#B5C2D6; --muted:#8494AE;
+    --line:#1A3050; --line-strong:#27436A;
+    --navy:#0E2542; --navy-2:#163560; --on-navy:#FFFFFF; --on-navy-2:#9FB3D1;
+    --red:#FF5A67; --red-ink:#FF7A85; --red-soft:#3A1622;
+    --good:#4BC79C; --good-soft:#0F3329; --warn:#F2B35A; --warn-soft:#3A2A10; --blue-soft:#12284A; --blue-ink:#8FB2E6;
+    --code-bg:#040C17; --code-ink:#D2DDEE;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px -18px rgba(0,0,0,.7);
+    --shadow-lg:0 2px 4px rgba(0,0,0,.4),0 40px 80px -30px rgba(0,0,0,.85);
+    --glass:rgba(6,17,31,.74);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#06111F; --surface:#0B1B30; --surface-2:#10243F; --ink:#E7EDF6; --ink-2:#B5C2D6; --muted:#8494AE;
+  --line:#1A3050; --line-strong:#27436A;
+  --navy:#0E2542; --navy-2:#163560; --on-navy:#FFFFFF; --on-navy-2:#9FB3D1;
+  --red:#FF5A67; --red-ink:#FF7A85; --red-soft:#3A1622;
+  --good:#4BC79C; --good-soft:#0F3329; --warn:#F2B35A; --warn-soft:#3A2A10; --blue-soft:#12284A; --blue-ink:#8FB2E6;
+  --code-bg:#040C17; --code-ink:#D2DDEE;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px -18px rgba(0,0,0,.7);
+  --shadow-lg:0 2px 4px rgba(0,0,0,.4),0 40px 80px -30px rgba(0,0,0,.85);
+  --glass:rgba(6,17,31,.74);
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{background:var(--bg);color:var(--ink);font:16px/1.65 var(--f-body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3,h4{font-family:var(--f-display);line-height:1.15;margin:0;text-wrap:balance;letter-spacing:-.02em}
+p{margin:0}
+a{color:inherit}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+img{max-width:100%}
+:focus-visible{outline:2px solid var(--red);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1180px;margin-inline:auto;padding-inline:clamp(16px,4vw,32px)}
+.num{font-variant-numeric:tabular-nums}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:600 12px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--red-ink)}
+.eyebrow::before{content:"";width:18px;height:2px;background:currentColor;border-radius:2px}
+.tag{display:inline-flex;align-items:center;gap:6px;font:600 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:999px;white-space:nowrap}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.tag.built{color:var(--good);background:var(--good-soft)}
+.tag.plan{color:var(--warn);background:var(--warn-soft)}
+.tag.verify{color:var(--red-ink);background:var(--red-soft)}
+.tag.illus{color:var(--blue-ink);background:var(--blue-soft)}
+
+/* reveal: only applied by JS to elements that start below the fold */
+.pre{opacity:0;transform:translateY(28px) scale(.985)}
+.pre.in{opacity:1;transform:none;transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);transition-delay:var(--d,0s)}
+
+/* progress, nav, dots */
+.progress{position:fixed;top:0;left:0;height:3px;width:100%;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,var(--red),#FF9A6B);z-index:70}
+.nav{position:fixed;inset:0 0 auto 0;z-index:60;padding-top:env(safe-area-inset-top,0px);transition:background .3s,border-color .3s,backdrop-filter .3s;border-bottom:1px solid transparent}
+.nav.solid{background:var(--glass);backdrop-filter:saturate(1.6) blur(14px);-webkit-backdrop-filter:saturate(1.6) blur(14px);border-bottom-color:var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:18px;height:62px}
+.brandmark{display:flex;align-items:center;gap:10px;font:800 17px var(--f-display);text-decoration:none;letter-spacing:-.02em;color:#fff;transition:color .3s}
+.nav.solid .brandmark{color:var(--ink)}
+.brandmark svg{width:28px;height:28px}
+.nav-links{display:flex;gap:2px;margin-left:auto}
+.nav-links a{font-size:13.5px;font-weight:500;color:#C9D6EA;text-decoration:none;padding:7px 10px;border-radius:8px;white-space:nowrap;transition:background .2s,color .2s}
+.nav.solid .nav-links a{color:var(--ink-2)}
+.nav-links a:hover,.nav-links a.on{background:rgba(230,57,70,.14);color:#fff}
+.nav.solid .nav-links a:hover,.nav.solid .nav-links a.on{color:var(--red-ink);background:var(--red-soft)}
+@media (max-width:980px){.nav-links{display:none}}
+.dots{position:fixed;right:18px;top:50%;transform:translateY(-50%);z-index:55;display:grid;gap:10px}
+.dots a{width:10px;height:10px;border-radius:50%;border:2px solid var(--line-strong);background:var(--surface);display:block;transition:transform .2s,background .2s,border-color .2s;position:relative}
+.dots a.on{background:var(--red);border-color:var(--red);transform:scale(1.3)}
+.dots a span{position:absolute;right:20px;top:50%;transform:translateY(-50%) translateX(6px);font:600 11px var(--f-mono);white-space:nowrap;background:var(--navy);color:#fff;padding:4px 8px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.dots a:hover span,.dots a:focus-visible span{opacity:1;transform:translateY(-50%)}
+@media (max-width:1280px){.dots{display:none}}
+.totop{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:55;width:44px;height:44px;border-radius:12px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);display:grid;place-items:center;box-shadow:var(--shadow);cursor:pointer;opacity:0;transform:translateY(10px);transition:opacity .3s,transform .3s;pointer-events:none}
+.totop.show{opacity:1;transform:none;pointer-events:auto}
+.totop svg{width:18px;height:18px}
+
+.nav-live{display:inline-flex;align-items:center;gap:8px;margin-left:12px;font:600 13px var(--f-body);color:#fff;background:var(--red);padding:8px 13px;border-radius:10px;text-decoration:none;box-shadow:0 8px 20px -8px rgba(230,57,70,.8);transition:transform .2s,background .2s;white-space:nowrap}
+.nav-live:hover{transform:translateY(-1px);background:#EF4855}
+@media (max-width:980px){.nav-live{margin-left:auto}}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:#7EE0B8;box-shadow:0 0 0 0 rgba(126,224,184,.7);animation:live 1.8s infinite}
+@keyframes live{70%{box-shadow:0 0 0 8px rgba(126,224,184,0)}100%{box-shadow:0 0 0 0 rgba(126,224,184,0)}}
+.btn.live{border-color:rgba(126,224,184,.5)}
+
+/* HERO */
+.hero{position:relative;min-height:clamp(640px,100svh,900px);display:flex;align-items:center;overflow:hidden;background:#0B1F3A;color:#fff;isolation:isolate;padding-top:62px}
+#heroCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:-2}
+.hero::after{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(55% 60% at 82% 30%,rgba(230,57,70,.28),transparent 65%),radial-gradient(50% 60% at 5% 100%,rgba(70,120,210,.25),transparent 60%),linear-gradient(180deg,transparent 70%,rgba(11,31,58,.9))}
+.hero .wrap{width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:clamp(28px,5vw,60px);align-items:center;padding-block:clamp(40px,6vw,80px)}
+@media (max-width:960px){.hero .wrap{grid-template-columns:1fr}}
+.hero .eyebrow{color:#FFB3B9}
+.hero h1{font-size:clamp(52px,8.4vw,104px);font-weight:800;letter-spacing:-.05em;margin-top:16px;line-height:.95}
+.hero h1 .w{display:inline-block;background:linear-gradient(100deg,#fff 35%,#FF8C95 100%);-webkit-background-clip:text;background-clip:text;color:transparent;animation:rise 1s cubic-bezier(.2,.7,.2,1) both}
+.hero .sub{font:700 clamp(18px,2vw,22px)/1.3 var(--f-display);color:#9FB3D1;margin-top:10px;letter-spacing:-.01em}
+.hero .lede{font-size:clamp(17px,1.9vw,20px);line-height:1.55;color:#D3DEEE;margin-top:20px;max-width:36ch}
+.hero .lede strong{color:#fff}
+.rotator{display:block;margin-top:18px;font:500 15px var(--f-mono);color:#C9D6EA;min-height:24px}
+.rotator b{color:#fff;font-weight:600;border-right:2px solid var(--red);padding-right:3px;animation:caret 1s steps(1) infinite}
+@keyframes caret{50%{border-color:transparent}}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.btn{display:inline-flex;align-items:center;gap:8px;font:600 14.5px var(--f-body);padding:12px 18px;border-radius:12px;text-decoration:none;border:1px solid transparent;transition:transform .2s cubic-bezier(.2,.7,.2,1),background .2s,box-shadow .2s;will-change:transform}
+.btn svg{width:17px;height:17px}
+.btn-red{background:var(--red);color:#fff;box-shadow:0 12px 28px -10px rgba(230,57,70,.8)}
+.btn-red:hover{background:#EF4855;box-shadow:0 16px 34px -10px rgba(230,57,70,.95)}
+.btn-ghost{color:#fff;border-color:rgba(255,255,255,.24);background:rgba(255,255,255,.05);backdrop-filter:blur(6px)}
+.btn-ghost:hover{background:rgba(255,255,255,.12)}
+.btn-dashed{color:#AFC0DA;border:1px dashed rgba(255,255,255,.3);cursor:default}
+.stage{position:relative;perspective:1400px}
+.browser{border-radius:14px;background:#0F233F;border:1px solid rgba(255,255,255,.14);box-shadow:0 50px 100px -30px rgba(0,0,0,.75);overflow:hidden;transform:rotateY(-10deg) rotateX(5deg);transition:transform .6s cubic-bezier(.2,.7,.2,1);animation:enter 1.1s .2s cubic-bezier(.2,.7,.2,1) both}
+@keyframes enter{from{transform:rotateY(-24deg) rotateX(10deg) translateY(30px)}}
+.browser .bar{display:flex;align-items:center;gap:6px;padding:10px 12px;background:#0B1B33;border-bottom:1px solid rgba(255,255,255,.08)}
+.browser .bar i{width:10px;height:10px;border-radius:50%}
+.browser .bar i:nth-child(1){background:#FF5F57}.browser .bar i:nth-child(2){background:#FEBC2E}.browser .bar i:nth-child(3){background:#28C840}
+.browser .bar span{margin-left:10px;font:500 11.5px var(--f-mono);color:#7F95B6;background:#132B4F;padding:3px 10px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+.browser img{display:block;width:100%;height:auto}
+.float{position:absolute;display:flex;gap:10px;align-items:flex-start;max-width:280px;padding:11px 13px;border-radius:12px;font-size:12.5px;line-height:1.45;color:#172033;background:rgba(255,255,255,.93);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 20px 40px -16px rgba(0,0,0,.6);animation:bob 6s ease-in-out infinite}
+.float b{font:600 10.5px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;display:block;color:#C62835;margin-bottom:2px}
+.float .ic{flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:#FFE5E7;color:#C62835}
+.float .ic svg{width:15px;height:15px}
+.float.f1{left:-20px;bottom:12%;animation-delay:-2s}
+.float.f2{right:-14px;top:-20px}
+.float.f2 b{color:#16775A}.float.f2 .ic{background:#E2F3EC;color:#16775A}
+@keyframes bob{50%{transform:translateY(-9px)}}
+@keyframes rise{from{transform:translateY(24px);opacity:0}}
+.fade-in>*{animation:rise .9s cubic-bezier(.2,.7,.2,1) both}
+.fade-in>*:nth-child(2){animation-delay:.08s}.fade-in>*:nth-child(3){animation-delay:.16s}.fade-in>*:nth-child(4){animation-delay:.24s}.fade-in>*:nth-child(5){animation-delay:.32s}.fade-in>*:nth-child(6){animation-delay:.4s}
+@media (max-width:960px){.browser{transform:none}.float.f1{left:8px;bottom:-24px}.float.f2{right:8px;top:-24px}}
+@media (max-width:540px){.float{display:none}}
+.scrollcue{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:grid;justify-items:center;gap:6px;font:600 10.5px var(--f-mono);letter-spacing:.12em;color:#8FA6C8;text-decoration:none}
+.scrollcue i{width:22px;height:34px;border:2px solid rgba(255,255,255,.35);border-radius:12px;position:relative}
+.scrollcue i::after{content:"";position:absolute;left:50%;top:6px;width:4px;height:7px;margin-left:-2px;border-radius:2px;background:#fff;animation:wheel 1.8s ease-in-out infinite}
+@keyframes wheel{60%{transform:translateY(10px);opacity:0}}
+@media (max-height:700px){.scrollcue{display:none}}
+
+/* marquee */
+.marquee{background:var(--navy);border-top:1px solid rgba(255,255,255,.08);overflow:hidden;padding-block:16px;--gap:12px}
+.marquee .track{display:flex;gap:var(--gap);width:max-content;animation:scrollx 38s linear infinite}
+.marquee:hover .track{animation-play-state:paused}
+.marquee span{font:500 13px var(--f-mono);color:#DCE6F4;padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);white-space:nowrap;transition:background .2s,border-color .2s}
+.marquee span:hover{background:rgba(230,57,70,.18);border-color:#E63946}
+.marquee span b{color:#FF8C95;font-weight:600;margin-right:6px}
+@keyframes scrollx{to{transform:translateX(calc(-50% - var(--gap)/2))}}
+
+/* scope counters */
+.scope{background:var(--surface);border-bottom:1px solid var(--line)}
+.scope .grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.scope .cell{padding:26px 16px;border-left:1px solid var(--line);transition:background .25s}
+.scope .cell:hover{background:var(--surface-2)}
+.scope .cell:first-child{border-left:0}
+.scope .n{font:800 34px/1 var(--f-display);letter-spacing:-.03em}
+.scope .n i{font-style:normal;color:var(--red)}
+.scope .l{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.35}
+.scope .note{font:500 11.5px var(--f-mono);color:var(--muted);padding:0 0 16px}
+@media (max-width:900px){.scope .grid{grid-template-columns:repeat(3,minmax(0,1fr))}.scope .cell{border-top:1px solid var(--line)}.scope .cell:nth-child(-n+3){border-top:0}.scope .cell:nth-child(4){border-left:0}}
+@media (max-width:500px){.scope .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.scope .cell{border-left:0!important;border-top:1px solid var(--line)!important}.scope .cell:nth-child(-n+2){border-top:0!important}.scope .cell:nth-child(even){border-left:1px solid var(--line)!important}}
+
+/* sections */
+section.block{padding-block:clamp(72px,9vw,120px);position:relative}
+.alt{background:var(--surface)}
+.shead{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px 48px;align-items:end;margin-bottom:44px}
+@media (max-width:860px){.shead{grid-template-columns:1fr}}
+.shead h2{font-size:clamp(32px,4.4vw,52px);font-weight:800;margin-top:14px}
+.shead h2 em{font-style:normal;color:var(--red)}
+.shead p{color:var(--ink-2);font-size:17px;max-width:60ch}
+.cap{font-size:13px;color:var(--muted);margin-top:10px}
+
+/* carousel */
+.carousel{position:relative;padding-block:10px 0;user-select:none;-webkit-user-select:none}
+.car-stage{position:relative;height:clamp(240px,40vw,520px);perspective:1600px;touch-action:pan-y}
+.slide{position:absolute;left:50%;top:0;width:min(78%,860px);transform-origin:50% 50%;transition:transform .7s cubic-bezier(.2,.7,.2,1),opacity .7s,filter .7s;cursor:pointer}
+.slide .frame{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow-lg)}
+.slide .frame .bar{display:flex;gap:6px;padding:8px 10px;background:var(--surface-2);border-bottom:1px solid var(--line)}
+.slide .frame .bar i{width:9px;height:9px;border-radius:50%;background:var(--line-strong)}
+.slide img{display:block;width:100%;height:auto;pointer-events:none}
+.slide.active{cursor:zoom-in}
+.car-ui{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:22px;flex-wrap:wrap}
+.car-cap h3{font-size:20px;font-weight:700}
+.car-cap p{font-size:14px;color:var(--muted);margin-top:2px;max-width:60ch}
+.car-ctrl{display:flex;align-items:center;gap:10px}
+.car-btn{width:44px;height:44px;border-radius:12px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:background .2s,transform .2s,border-color .2s}
+.car-btn:hover{background:var(--navy);color:#fff;border-color:var(--navy);transform:translateY(-2px)}
+.car-btn svg{width:18px;height:18px}
+.car-dots{display:flex;gap:6px;flex-wrap:wrap}
+.car-dots button{width:8px;height:8px;border-radius:999px;border:0;background:var(--line-strong);cursor:pointer;padding:0;transition:width .3s,background .3s}
+.car-dots button[aria-current="true"]{width:26px;background:var(--red)}
+.car-progress{height:3px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:14px}
+.car-progress i{display:block;height:100%;width:0;background:var(--red)}
+
+/* flip cards problem/solution */
+.flips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:960px){.flips{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.flips{grid-template-columns:1fr}}
+.flip{perspective:1200px;min-height:250px;cursor:pointer}
+.flip .in{position:relative;height:100%;min-height:250px;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+.flip:hover .in,.flip:focus-within .in,.flip.on .in{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:18px;padding:22px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;gap:10px}
+.face.front{background:var(--surface);border:1px solid var(--line)}
+.face.back{background:var(--navy);color:var(--on-navy);transform:rotateY(180deg);border:1px solid var(--navy)}
+.face .k{font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase}
+.face.front .k{color:var(--red-ink)}
+.face.back .k{color:#7EE0B8}
+.face h3{font-size:19px;font-weight:700}
+.face p{font-size:14px;color:var(--ink-2)}
+.face.back p{color:var(--on-navy-2)}
+.face.back p strong{color:#fff}
+.face .hint{margin-top:auto;display:flex;align-items:center;gap:6px;font:600 12px var(--f-mono);color:var(--muted)}
+.face .hint svg{width:14px;height:14px}
+.face .big{font:600 13px/1.5 var(--f-mono);background:var(--surface-2);padding:8px 10px;border-radius:8px;color:var(--ink);word-break:break-word}
+.flip .ghost{visibility:hidden;padding:22px}
+@media (hover:none){.flip .face .hint span.h{display:none}}
+
+/* thesis */
+.thesis{margin-top:52px;border-radius:24px;background:var(--navy);color:var(--on-navy);padding:clamp(24px,4vw,48px);display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:32px;align-items:center;position:relative;overflow:hidden;isolation:isolate}
+.thesis::before{content:"";position:absolute;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(230,57,70,.4),transparent 70%);left:var(--tx,80%);top:var(--ty,10%);transform:translate(-50%,-50%);z-index:-1;transition:left .4s ease-out,top .4s ease-out}
+.thesis h3{font-size:clamp(26px,3.2vw,38px);font-weight:800}
+.thesis h3 em{font-style:normal;color:#FF8C95}
+.thesis p{color:var(--on-navy-2);margin-top:12px}
+@media (max-width:860px){.thesis{grid-template-columns:1fr}}
+.contract{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.contract .c{border-radius:14px;padding:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);transition:transform .3s,background .3s}
+.contract .c:hover{transform:translateY(-4px);background:rgba(255,255,255,.1)}
+.contract h4{font:600 11.5px var(--f-mono);letter-spacing:.08em;text-transform:uppercase}
+.contract .facts h4{color:#7EE0B8}.contract .words h4{color:#FF9CA4}
+.contract ul{margin:8px 0 0;padding-left:18px;font-size:14px;color:#D6E0EE;display:grid;gap:4px}
+@media (max-width:480px){.contract{grid-template-columns:1fr}}
+
+/* architecture scrollytelling */
+.story{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:clamp(24px,5vw,64px)}
+@media (max-width:960px){.story{grid-template-columns:1fr}}
+.story .steps{display:grid;gap:18px;padding-block:6vh 20vh}
+@media (max-width:960px){.story .steps{padding:0}}
+.sstep{padding:22px;border-radius:16px;border:1px solid var(--line);background:var(--surface);transition:border-color .4s,box-shadow .4s,transform .4s,opacity .4s;opacity:.55}
+.sstep.on{opacity:1;border-color:var(--red);box-shadow:var(--shadow);transform:translateX(6px)}
+@media (max-width:960px){.sstep{opacity:1}}
+.sstep .k{font:600 11px var(--f-mono);color:var(--red-ink);letter-spacing:.08em}
+.sstep h3{font-size:20px;font-weight:700;margin-top:6px}
+.sstep p{font-size:14.5px;color:var(--ink-2);margin-top:6px}
+.story .viz{position:sticky;top:90px;align-self:start}
+@media (max-width:960px){.story .viz{position:relative;top:0;order:-1}}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:clamp(14px,2.5vw,24px);box-shadow:var(--shadow)}
+.layer{border:1.5px solid var(--line-strong);border-radius:14px;padding:12px;transition:border-color .4s,background .4s,box-shadow .4s,transform .4s}
+.layer .lh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.layer.lit{border-color:var(--red);background:var(--red-soft);box-shadow:0 0 0 4px rgba(230,57,70,.12);transform:scale(1.015)}
+.layer.lit .lh{color:var(--red-ink)}
+.row{display:grid;gap:8px}
+.r4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:620px){.r4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.node{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:9px 10px;font-size:12px;color:var(--muted);line-height:1.4}
+.node b{display:block;color:var(--ink);font-size:13px;font-family:var(--f-display)}
+.node.dark{background:var(--navy);border-color:var(--navy);color:var(--on-navy-2)}
+.node.dark b{color:#fff}
+.node.dash{border-style:dashed;background:transparent}
+.flow{position:relative;height:30px;display:flex;justify-content:center;align-items:center}
+.flow::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:repeating-linear-gradient(to bottom,var(--red) 0 6px,transparent 6px 12px);background-size:2px 12px;animation:flowY .9s linear infinite}
+.flow span{position:relative;font:500 11px var(--f-mono);background:var(--surface);color:var(--ink-2);padding:2px 8px;border:1px solid var(--line);border-radius:999px}
+@keyframes flowY{to{background-position:0 12px}}
+
+/* pinned horizontal pipeline */
+.hs{position:relative}
+.hs-sticky{position:sticky;top:0;height:100vh;height:100svh;display:flex;flex-direction:column;justify-content:center;overflow:hidden;padding-top:62px}
+.hs-track{display:flex;gap:18px;padding-inline:max(16px,calc((100vw - 1180px)/2 + 32px));will-change:transform}
+.hs-card{flex:0 0 min(340px,78vw);background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:10px;position:relative;box-shadow:var(--shadow);transition:transform .3s,border-color .3s}
+.hs-card:hover{transform:translateY(-6px);border-color:var(--red)}
+.hs-card .k{font:600 12px var(--f-mono);color:var(--red-ink);letter-spacing:.08em}
+.hs-card h3{font-size:22px;font-weight:800}
+.hs-card p{font-size:14px;color:var(--ink-2)}
+.hs-card .io{margin-top:auto;font:12.5px/1.6 var(--f-mono);background:var(--code-bg);color:var(--code-ink);padding:12px;border-radius:12px;word-break:break-word}
+.hs-card .io .dim{color:#6F84A6}
+.hs-card.dark{background:var(--navy);border-color:var(--navy);color:var(--on-navy)}
+.hs-card.dark p{color:var(--on-navy-2)}
+.hs-card.dark .k{color:#FF9CA4}
+.hs-card::after{content:"";position:absolute;right:-19px;top:50%;width:18px;height:2px;background:var(--red)}
+.hs-card:last-child::after{display:none}
+.hs-bar{height:3px;background:var(--line);border-radius:3px;margin-top:26px;overflow:hidden}
+.hs-bar i{display:block;height:100%;width:0;background:var(--red)}
+.hs.static .hs-sticky{position:relative;height:auto;padding-block:0;overflow:visible}
+.hs.static .hs-track{overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:16px;transform:none!important;scrollbar-width:thin}
+.hs.static .hs-card{scroll-snap-align:start}
+.hs.static .hs-bar{display:none}
+.hs.static{padding-block:clamp(72px,9vw,120px)}
+
+/* demo + panels */
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(22px,4vw,44px);align-items:center}
+@media (max-width:920px){.two{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;transition:box-shadow .3s,border-color .3s}
+.panel:hover{box-shadow:var(--shadow);border-color:var(--line-strong)}
+.panel h3{font-size:19px;font-weight:700}
+.panel>p{font-size:14px;color:var(--ink-2);margin-top:6px}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{font:600 13px var(--f-body);border:0;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;cursor:pointer;transition:background .2s,color .2s}
+.seg button[aria-pressed="true"],.seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(11,31,58,.14)}
+.term{margin-top:16px;background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:14px 16px;font:13px/1.7 var(--f-mono);overflow-x:auto}
+.term .pr{color:#7EE0B8}.term .dim{color:#6F84A6}
+.conf-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:18px}
+.conf-row .cat{font:800 24px var(--f-display)}
+.conf-row .pct{font:600 20px var(--f-mono)}
+.trk{position:relative;height:14px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);margin-top:10px}
+.fill{position:absolute;inset:0 auto 0 0;border-radius:999px;background:linear-gradient(90deg,#3E6DB0,#0B1F3A);transition:width .8s cubic-bezier(.2,.7,.2,1)}
+:root[data-theme="dark"] .fill{background:linear-gradient(90deg,#3E6DB0,#8FB2E6)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fill{background:linear-gradient(90deg,#3E6DB0,#8FB2E6)}}
+.fill.low{background:repeating-linear-gradient(135deg,var(--red) 0 6px,var(--red-ink) 6px 12px)}
+.mark{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--ink)}
+.mark span{position:absolute;top:24px;left:50%;transform:translateX(-50%);font:600 10.5px var(--f-mono);color:var(--ink-2);white-space:nowrap}
+.verdict{margin-top:36px;display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;font-size:14px}
+.verdict svg{flex:none;width:18px;height:18px;margin-top:2px}
+.verdict.ok{background:var(--good-soft);color:var(--good)}
+.verdict.ask{background:var(--red-soft);color:var(--red-ink)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.rule{margin-top:14px;background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:12px 14px;font:12.5px/1.7 var(--f-mono);overflow-x:auto}
+.rule .kw{color:#FF9CA4}.rule .n{color:#7EE0B8}.rule .dim{color:#6F84A6}
+.note{display:flex;gap:10px;margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--warn-soft);color:var(--warn);font-size:13.5px;line-height:1.5}
+.note svg{flex:none;width:17px;height:17px;margin-top:2px}
+
+/* strip plot */
+.strip{margin-top:20px}
+.strip svg{width:100%;height:auto;display:block;overflow:visible}
+.strip .axis{stroke:var(--line-strong)}
+.strip text{fill:var(--muted);font:500 11px var(--f-mono)}
+.strip .band{fill:var(--blue-soft)}
+.strip .med{stroke:var(--ink);stroke-width:2}
+.strip .out{fill:var(--red)}
+.strip .pulse{fill:none;stroke:var(--red);stroke-width:2;transform-box:fill-box;transform-origin:center;animation:ping 2s ease-out infinite}
+@keyframes ping{from{transform:scale(1);opacity:.9}to{transform:scale(3.2);opacity:0}}
+.strip .lbl{fill:var(--ink);font:600 12px var(--f-body)}
+.strip .lbl-r{fill:var(--red-ink);font:700 12px var(--f-body)}
+
+.ladder .bar{display:flex;height:44px;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-top:18px}
+.ladder .bar div{display:flex;align-items:center;justify-content:center;font:600 11px var(--f-mono);text-align:center;padding:0 4px;line-height:1.15;border-left:1px solid var(--surface);transition:filter .2s,transform .2s}
+.ladder .bar div:hover{filter:brightness(1.12)}
+.ladder .bar div:first-child{border-left:0}
+.lz0{background:repeating-linear-gradient(135deg,var(--surface-2) 0 6px,var(--surface) 6px 12px);color:var(--muted)}
+.lz1{background:#D6E0EF;color:#0B1F3A}.lz2{background:#A9BEDC;color:#0B1F3A}.lz3{background:#4F74A8;color:#fff}.lz4{background:#0B1F3A;color:#fff}
+:root[data-theme="dark"] .lz4{background:#8FB2E6;color:#06111F}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lz4{background:#8FB2E6;color:#06111F}}
+.ticks{position:relative;height:22px;margin-top:6px;font:500 11px var(--f-mono);color:var(--muted)}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.ticks span:first-child{transform:none}
+.weights{display:flex;height:54px;border-radius:12px;overflow:hidden;margin-top:18px;gap:2px}
+.weights div{display:flex;flex-direction:column;justify-content:center;padding:0 10px;color:#fff;font:600 11px/1.25 var(--f-mono);min-width:0;overflow:hidden;transition:flex-grow .4s cubic-bezier(.2,.7,.2,1)}
+.weights div b{font:800 16px var(--f-display)}
+.weights:hover div{flex-grow:var(--g)}
+.weights div:hover{flex-grow:calc(var(--g) * 1.8)!important}
+.w1{background:#0B1F3A}.w2{background:#1D3E6E}.w3{background:#3A5F95}.w4{background:#E63946}.w5{background:#B8424E}.w6{background:#7D8FAA}
+.metrics{width:100%;border-collapse:collapse;margin-top:12px}
+.metrics th{font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+.metrics td{font:600 18px var(--f-mono);padding:12px 10px;border-bottom:1px solid var(--line)}
+.tscroll{overflow-x:auto}
+
+/* OCR receipt illustration */
+.ocr{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(22px,4vw,48px);align-items:center}
+@media (max-width:900px){.ocr{grid-template-columns:1fr}}
+.paper-wrap{position:relative;display:flex;justify-content:center;padding:20px}
+.paper{position:relative;width:min(320px,100%);background:#FFFDF8;color:#2A2A2A;font:13px/1.75 "JetBrains Mono",monospace;padding:24px 22px 34px;box-shadow:0 30px 60px -20px rgba(11,31,58,.45);transform:rotate(-3deg);transition:transform .5s cubic-bezier(.2,.7,.2,1);overflow:hidden;-webkit-mask:linear-gradient(#000 0 0) top/100% calc(100% - 10px) no-repeat,radial-gradient(circle 6px at 8px 100%,transparent 6px,#000 6.5px) bottom/16px 10px repeat-x;mask:linear-gradient(#000 0 0) top/100% calc(100% - 10px) no-repeat,radial-gradient(circle 6px at 8px 100%,transparent 6px,#000 6.5px) bottom/16px 10px repeat-x}
+.paper-wrap:hover .paper{transform:rotate(0) scale(1.03)}
+.paper .c{text-align:center}
+.paper .hr{border-top:1px dashed #9AA3B2;margin:8px 0}
+.paper .ln{display:flex;justify-content:space-between;gap:10px;padding:0 4px;border-radius:4px;transition:background .3s}
+.paper .ln.hit{animation:hit 6s infinite}
+.paper .ln.hit:nth-of-type(1){animation-delay:.6s}
+@keyframes hit{0%,8%{background:transparent}12%,70%{background:rgba(230,57,70,.16)}80%,100%{background:transparent}}
+.beam{position:absolute;left:0;right:0;height:60px;top:-60px;background:linear-gradient(180deg,transparent,rgba(230,57,70,.22) 70%,rgba(230,57,70,.85) 96%,transparent);animation:scan 6s cubic-bezier(.45,.05,.55,.95) infinite;pointer-events:none}
+@keyframes scan{0%{top:-60px}55%{top:100%}100%{top:100%}}
+.parsed{background:var(--code-bg);color:var(--code-ink);border-radius:16px;padding:18px;font:13px/1.8 var(--f-mono);box-shadow:var(--shadow-lg)}
+.parsed .row2{display:grid;grid-template-columns:92px 1fr 64px;gap:8px;align-items:center;animation:pop 6s infinite both}
+.parsed .row2 .kk{color:#6F84A6}
+.parsed .row2 .vv{color:#fff}
+.parsed .row2 .cc{text-align:right;font-size:11px}
+.parsed .row2 .cc.hi{color:#7EE0B8}.parsed .row2 .cc.md{color:#F2B35A}.parsed .row2 .cc.no{color:#FF9CA4}
+@keyframes pop{0%,var(--s){opacity:.18;transform:translateX(-6px)}}
+.parsed .row2:nth-child(2){animation-name:p1}.parsed .row2:nth-child(3){animation-name:p2}.parsed .row2:nth-child(4){animation-name:p3}.parsed .row2:nth-child(5){animation-name:p4}.parsed .row2:nth-child(6){animation-name:p5}.parsed .row2:nth-child(7){animation-name:p6}
+@keyframes p1{0%,8%{opacity:.18}14%,100%{opacity:1}}
+@keyframes p2{0%,16%{opacity:.18}22%,100%{opacity:1}}
+@keyframes p3{0%,30%{opacity:.18}36%,100%{opacity:1}}
+@keyframes p4{0%,38%{opacity:.18}44%,100%{opacity:1}}
+@keyframes p5{0%,44%{opacity:.18}50%,100%{opacity:1}}
+@keyframes p6{0%,52%{opacity:.18}58%,100%{opacity:1}}
+.parsed .hd{display:flex;justify-content:space-between;color:#8FA6C8;font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.chip{display:inline-flex;align-items:center;gap:8px;font:500 12.5px var(--f-mono);padding:8px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink-2);transition:transform .2s,border-color .2s,background .2s}
+.chip:hover{transform:translateY(-2px);border-color:var(--red);background:var(--red-soft)}
+.chip b{color:var(--red-ink)}
+
+/* chat */
+.chat{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-lg);overflow:hidden}
+.chat .top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface-2);font:600 13px var(--f-body)}
+.chat .body{padding:18px;display:grid;gap:12px;min-height:360px;align-content:start}
+.msg{max-width:88%;padding:11px 14px;border-radius:16px;font-size:14px;line-height:1.55}
+.msg.u{justify-self:end;background:var(--navy);color:#fff;border-bottom-right-radius:4px}
+.msg.a{background:var(--surface-2);color:var(--ink);border-bottom-left-radius:4px}
+.msg.a ul{margin:6px 0 0;padding-left:18px}
+.tl{display:grid;gap:6px}
+.tl code{display:block;font-size:12px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 9px;color:var(--ink-2);animation:rise .5s both}
+.tl code b{color:var(--good);font-weight:600}
+.typing{display:inline-flex;gap:4px;padding:12px 14px;background:var(--surface-2);border-radius:16px;width:max-content}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{50%{opacity:.25;transform:translateY(-3px)}}
+.replay{font:600 12px var(--f-body);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);padding:5px 10px;border-radius:8px;cursor:pointer}
+.seq{display:grid;gap:14px}
+.seq .r{display:grid;grid-template-columns:38px 1fr;gap:12px;align-items:start}
+.seq .n{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font:700 14px var(--f-mono);background:var(--surface-2);border:1px solid var(--line);transition:background .3s,color .3s}
+.seq .r:hover .n{background:var(--navy);color:#fff;border-color:var(--navy)}
+.seq .r.llm .n{background:var(--red-soft);border-color:var(--red);color:var(--red-ink)}
+.seq h4{font-size:15.5px;font-weight:700}
+.seq p{font-size:13.5px;color:var(--muted);margin-top:2px}
+
+/* compare slider */
+.compare{position:relative;border-radius:18px;overflow:hidden;box-shadow:var(--shadow-lg);border:1px solid var(--line);aspect-ratio:1440/900;max-width:100%;background:#0B1F3A;--pos:50%}
+.compare img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.compare .topimg{clip-path:inset(0 calc(100% - var(--pos)) 0 0)}
+.compare .handle{position:absolute;top:0;bottom:0;left:var(--pos);width:2px;background:#fff;transform:translateX(-1px);pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.compare .handle::after{content:"";position:absolute;top:50%;left:50%;width:44px;height:44px;border-radius:50%;transform:translate(-50%,-50%);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230B1F3A' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 6-6 6 6 6M15 6l6 6-6 6'/%3E%3C/svg%3E") center/22px no-repeat;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+.compare input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
+.compare .lab{position:absolute;top:14px;font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;padding:5px 9px;border-radius:999px;pointer-events:none}
+.compare .lab.l{left:14px;background:#fff;color:#0B1F3A}
+.compare .lab.r{right:14px;background:#0B1F3A;color:#fff;border:1px solid rgba(255,255,255,.3)}
+
+/* ER + API */
+.er{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:780px){.er{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:440px){.er{grid-template-columns:1fr}}
+.tbl{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:transform .3s,box-shadow .3s,border-color .3s}
+.tbl:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--red)}
+.tbl .th{background:var(--navy);color:#fff;font:600 12.5px var(--f-mono);padding:9px 11px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tbl .th small{color:var(--on-navy-2);font-weight:500}
+.tbl ul{list-style:none;margin:0;padding:9px 11px;display:grid;gap:3px;color:var(--ink-2);font:11.5px/1.5 var(--f-mono)}
+.tbl ul b{color:var(--red-ink);font-weight:600}
+.tbl.wide{grid-column:1/-1}
+.tbl.wide ul{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.api{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-top:28px}
+.api-tabs{display:flex;gap:2px;padding:8px;border-bottom:1px solid var(--line);overflow-x:auto;background:var(--surface-2)}
+.api-tabs button{font:600 13px var(--f-body);border:0;background:transparent;color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.api-tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(11,31,58,.14)}
+.api-list{list-style:none;margin:0;padding:8px;display:grid;gap:2px;min-height:300px;align-content:start}
+.api-list li{display:grid;grid-template-columns:72px minmax(0,1fr);gap:4px 12px;align-items:center;padding:8px 10px;border-radius:8px;font:13px var(--f-mono);animation:rise .35s both}
+.api-list li:hover{background:var(--surface-2)}
+.api-list .p{overflow-wrap:anywhere}
+.api-list .d{grid-column:2;font:12.5px var(--f-body);color:var(--muted)}
+.m{font:700 11px var(--f-mono);text-align:center;padding:4px 0;border-radius:6px}
+.m.GET{color:var(--good);background:var(--good-soft)}.m.POST{color:var(--blue-ink);background:var(--blue-soft)}.m.PUT,.m.PATCH{color:var(--warn);background:var(--warn-soft)}.m.DELETE{color:var(--red-ink);background:var(--red-soft)}
+.api-foot{padding:12px 16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* security */
+.sec{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:920px){.sec{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.sec{grid-template-columns:1fr}}
+.tilt{transform-style:preserve-3d;transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s,border-color .25s;will-change:transform}
+.sec .it{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;overflow:hidden}
+.sec .it::before,.feat::before{content:"";position:absolute;inset:0;background:radial-gradient(360px circle at var(--mx,50%) var(--my,0%),rgba(230,57,70,.12),transparent 45%);opacity:0;transition:opacity .3s;pointer-events:none}
+.sec .it:hover,.feat:hover{box-shadow:var(--shadow-lg);border-color:var(--line-strong)}
+.sec .it:hover::before,.feat:hover::before{opacity:1}
+.sec .it h4{font-size:15.5px;font-weight:700;display:flex;gap:8px;align-items:center}
+.sec .it h4 svg{width:18px;height:18px;color:var(--good)}
+.sec .it p{font-size:13.5px;color:var(--ink-2);margin-top:6px}
+.gaps{margin-top:18px;border:1px dashed var(--warn);border-radius:16px;padding:18px 20px;background:var(--warn-soft)}
+.gaps h4{font-size:15.5px;color:var(--warn);display:flex;gap:8px;align-items:center}
+.gaps h4 svg{width:18px;height:18px}
+.gaps ul{margin:8px 0 0;padding-left:20px;color:var(--ink-2);font-size:14px;display:grid;gap:4px}
+
+/* features */
+.feats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:1060px){.feats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:780px){.feats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.feats{grid-template-columns:1fr}}
+.feat{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:9px;overflow:hidden}
+.feat .ico{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:var(--navy);color:#fff;transition:transform .4s cubic-bezier(.2,.7,.2,1),background .3s}
+.feat:hover .ico{transform:rotate(-8deg) scale(1.08);background:var(--red)}
+.feat .ico svg{width:20px;height:20px}
+.feat h3{font-size:16.5px;font-weight:700}
+.feat p{font-size:13.5px;color:var(--ink-2)}
+.feat .spec{margin-top:auto;display:flex;flex-wrap:wrap;gap:5px;padding-top:4px}
+.feat .spec span{font:500 11px var(--f-mono);color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);padding:3px 7px;border-radius:6px}
+
+/* deploy tabs */
+.dtabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+.dpanel[hidden]{display:none!important}
+.dflow{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:6px 2px 10px}
+.dnode{flex:1 1 0;min-width:170px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:6px;transition:transform .3s,border-color .3s,box-shadow .3s}
+.dnode:hover{transform:translateY(-5px);border-color:var(--red);box-shadow:var(--shadow)}
+.dnode .k{font:600 11px var(--f-mono);color:var(--red-ink);letter-spacing:.06em}
+.dnode h4{font-size:16px;font-weight:700}
+.dnode p{font-size:12.5px;color:var(--muted)}
+.dnode.dark{background:var(--navy);border-color:var(--navy);color:#fff}
+.dnode.dark p{color:var(--on-navy-2)}.dnode.dark .k{color:#FF9CA4}
+.dnode.q{border-style:dashed}
+.dj{flex:0 0 34px;align-self:center;height:2px;position:relative;background:repeating-linear-gradient(90deg,var(--red) 0 6px,transparent 6px 10px);background-size:10px 2px;animation:flowX .8s linear infinite}
+.dj::after{content:"";position:absolute;right:-1px;top:-4px;border:5px solid transparent;border-left-color:var(--red)}
+@keyframes flowX{to{background-position:10px 0}}
+@media (max-width:860px){.dflow{flex-direction:column;overflow:visible}.dnode{min-width:0}.dj{flex:0 0 26px;width:2px;height:auto;background:repeating-linear-gradient(180deg,var(--red) 0 6px,transparent 6px 10px);background-size:2px 10px;animation-name:flowY}.dj::after{right:auto;left:-4px;top:auto;bottom:-6px;border-left-color:transparent;border-top-color:var(--red)}}
+.ci{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:22px}
+@media (max-width:980px){.ci{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.ci{grid-template-columns:1fr}}
+.job{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;position:relative;overflow:hidden}
+.job::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--good);transform:scaleX(0);transform-origin:0 50%;transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+.job:hover::after,.ci.run .job::after{transform:scaleX(1)}
+.ci.run .job:nth-child(2)::after{transition-delay:.15s}.ci.run .job:nth-child(3)::after{transition-delay:.3s}.ci.run .job:nth-child(4)::after{transition-delay:.45s}.ci.run .job:nth-child(5)::after{transition-delay:.6s}
+.job h4{font:700 13px var(--f-mono);display:flex;gap:8px;align-items:center}
+.job h4::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--good)}
+.job p{font-size:12.5px;color:var(--muted);margin-top:4px}
+
+/* challenges scroller */
+.cscroll-wrap{position:relative}
+.cscroll{display:grid;grid-auto-flow:column;grid-auto-columns:min(420px,86%);gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 2px 18px;scrollbar-width:thin;cursor:grab}
+.cscroll.drag{cursor:grabbing;scroll-snap-type:none}
+.ch{scroll-snap-align:start;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px;display:grid;gap:12px;align-content:start;transition:border-color .3s,box-shadow .3s;user-select:none;-webkit-user-select:none}
+.ch:hover{border-color:var(--line-strong);box-shadow:var(--shadow)}
+.ch .hd{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.ch .no{font:800 44px/1 var(--f-display);color:var(--line-strong);letter-spacing:-.04em;transition:color .3s}
+.ch:hover .no{color:var(--red)}
+.ch h3{font-size:18px;font-weight:700}
+.ch .src{font:500 11px var(--f-mono);color:var(--muted)}
+.ch dl{margin:0;display:grid;grid-template-columns:80px 1fr;gap:8px 12px;font-size:14px}
+.ch dt{font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:3px}
+.ch dd{margin:0;color:var(--ink-2)}
+.ch dt.fix{color:var(--good)}.ch dt.open{color:var(--warn)}
+.cs-ctrl{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+
+/* decisions accordion */
+.acc{display:grid;gap:10px}
+.acc details{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:border-color .3s,box-shadow .3s}
+.acc details[open]{border-color:var(--red);box-shadow:var(--shadow)}
+.acc summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:16px 18px;font:700 16px var(--f-display)}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary i{flex:none;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--surface-2);transition:transform .3s,background .3s}
+.acc summary i svg{width:15px;height:15px}
+.acc details[open] summary i{transform:rotate(45deg);background:var(--red-soft);color:var(--red-ink)}
+.acc .bd{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 18px 18px}
+@media (max-width:620px){.acc .bd{grid-template-columns:1fr}}
+.acc .bd div{background:var(--surface-2);border-radius:10px;padding:12px;font-size:14px;color:var(--ink-2)}
+.acc .bd b{display:block;font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.acc .bd .why b{color:var(--good)}.acc .bd .tr b{color:var(--warn)}
+
+/* testing */
+.tcols{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px}
+@media (max-width:880px){.tcols{grid-template-columns:1fr}}
+.tstat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.tstat div{background:var(--surface-2);border-radius:12px;padding:14px}
+.tstat b{display:block;font:800 30px var(--f-display);letter-spacing:-.03em}
+.tstat span{font-size:12px;color:var(--muted)}
+.list{display:grid;gap:10px;margin:14px 0 0;padding:0;list-style:none}
+.list li{display:grid;grid-template-columns:20px 1fr;gap:10px;font-size:14px;color:var(--ink-2)}
+.list li svg{width:17px;height:17px;color:var(--red);margin-top:3px}
+.list li strong{color:var(--ink)}
+
+/* lessons */
+.lessons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:980px){.lessons{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.lessons{grid-template-columns:1fr}}
+.lesson{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;overflow:hidden;transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s}
+.lesson::after{content:"";position:absolute;left:0;top:0;height:100%;width:4px;background:var(--red);transform:scaleY(.25);transform-origin:top;transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+.lesson:hover{transform:translateY(-5px);box-shadow:var(--shadow)}
+.lesson:hover::after{transform:scaleY(1)}
+.lesson h4{font-size:16px;font-weight:700}
+.lesson p{font-size:14px;color:var(--ink-2);margin-top:6px}
+
+/* roadmap timeline */
+.tline{position:relative;display:grid;gap:22px;padding-left:40px}
+.tline::before{content:"";position:absolute;left:14px;top:6px;bottom:6px;width:3px;border-radius:3px;background:var(--line)}
+.tline .fillbar{position:absolute;left:14px;top:6px;width:3px;border-radius:3px;background:linear-gradient(var(--red),#FF9A6B);height:0}
+.ph{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 20px;transition:border-color .3s,box-shadow .3s}
+.ph::before{content:"";position:absolute;left:-33px;top:22px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--line-strong);transition:border-color .3s,background .3s}
+.ph.on::before{border-color:var(--red);background:var(--red)}
+.ph:hover{border-color:var(--line-strong);box-shadow:var(--shadow)}
+.ph .hd{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.ph h3{font-size:18px;font-weight:700}
+.ph p{font-size:14px;color:var(--ink-2);margin-top:6px}
+
+/* resume */
+.resume{display:grid;gap:12px}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start}
+.rcard h4{font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.rcard p,.rcard li{font-size:14.5px;color:var(--ink-2)}
+.rcard ul{margin:0;padding-left:18px;display:grid;gap:8px}
+.copy{font:600 12.5px var(--f-body);border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink);padding:8px 12px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s}
+.copy:hover{background:var(--navy);color:#fff}
+@media (max-width:560px){.rcard{grid-template-columns:1fr}}
+
+/* closing */
+.closing{background:#0B1F3A;color:#fff;position:relative;overflow:hidden;isolation:isolate;text-align:center;padding-block:clamp(80px,10vw,130px)}
+.closing::before{content:"";position:absolute;inset:-20%;z-index:-1;background:conic-gradient(from 0deg at 50% 50%,rgba(230,57,70,.25),transparent 25%,rgba(70,120,210,.22) 50%,transparent 75%,rgba(230,57,70,.25));animation:spin 30s linear infinite;filter:blur(60px)}
+@keyframes spin{to{transform:rotate(1turn)}}
+.closing h2{font-size:clamp(32px,5vw,58px);font-weight:800;max-width:18ch;margin-inline:auto}
+.closing h2 em{font-style:normal;color:#FF8C95}
+.closing p{color:#B8C8E0;margin:16px auto 0;max-width:56ch}
+.closing .cta{justify-content:center}
+footer{background:#071629;color:#8FA6C8;padding-block:28px;font-size:13px}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* lightbox */
+.lb{position:fixed;inset:0;z-index:90;background:rgba(4,10,20,.9);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:grid;place-items:center;padding:24px}
+.lb img{max-width:min(1240px,100%);max-height:84vh;border-radius:12px;box-shadow:0 40px 80px -20px rgba(0,0,0,.8);animation:zoomin .35s cubic-bezier(.2,.7,.2,1)}
+@keyframes zoomin{from{transform:scale(.94);opacity:0}}
+.lb p{color:#D3DEEE;font-size:14px;margin-top:12px;text-align:center}
+.lb button{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));right:16px;width:42px;height:42px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:22px;cursor:pointer}
+.zoom{cursor:zoom-in;border:0;padding:0;background:none;display:block;width:100%;border-radius:16px;overflow:hidden;box-shadow:var(--shadow-lg);transition:transform .4s cubic-bezier(.2,.7,.2,1)}
+.zoom:hover{transform:translateY(-4px) scale(1.01)}
+.zoom img{display:block;width:100%;height:auto}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .pre{opacity:1;transform:none}
+  .browser{transform:none}
+  .parsed .row2{opacity:1}
+}
+</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l2-1.5L9 21l2-1.5L13 21l2-1.5L17 21l2-1.5V3l-2 1.5L15 3l-2 1.5L11 3 9 4.5 7 3z"/><path d="M9 8h6M9 12h6M9 16h4"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></symbol>
+    <symbol id="i-trend" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.4-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></symbol>
+    <symbol id="i-logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#132B4F"/><path d="M7 21l6-6 4 4 8-9" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="10" r="2.6" fill="#E63946"/></symbol>
+  </defs>
+</svg>
+
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<nav class="nav" id="nav" aria-label="Sections">
+  <div class="wrap">
+    <a class="brandmark" href="#top"><svg aria-hidden="true"><use href="#i-logo"/></svg>Finora</a>
+    <div class="nav-links" id="navLinks">
+      <a href="#product">Product</a>
+      <a href="#problem">Problem</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#ml">ML</a>
+      <a href="#ocr">OCR</a>
+      <a href="#assistant">AI</a>
+      <a href="#data">Data &amp; API</a>
+      <a href="#security">Security</a>
+      <a href="#deploy">Deploy</a>
+      <a href="#challenges">Challenges</a>
+      <a href="#roadmap">Roadmap</a>
+    </div>
+    <a class="nav-live" href="https://finora-ai-personal-finance.vercel.app/" target="_blank" rel="noopener"><span class="pulse-dot"></span>Live demo</a>
+  </div>
+</nav>
+
+<nav class="dots" id="dots" aria-label="Section dots"></nav>
+<button class="totop" id="totop" type="button" aria-label="Back to top"><svg><use href="#i-up"/></svg></button>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <canvas id="heroCanvas" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="fade-in">
+      <span class="eyebrow">Engineering case study · Full-stack + ML</span>
+      <h1><span class="w">Finora</span></h1>
+      <p class="sub">AI-Powered Personal Finance Platform</p>
+      <p class="lede">A finance platform where <strong>the backend computes every number</strong> and the AI is only allowed to explain it.</p>
+      <p class="rotator" aria-live="off">It <b id="rot">categorises noisy bank narrations</b></p>
+      <div class="cta">
+        <a class="btn btn-red mag" href="https://github.com/Divyanshi12coder/finora-ai-personal-finance" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-github"/></svg>View source</a>
+        <a class="btn btn-ghost mag" href="#product"><svg aria-hidden="true"><use href="#i-arrow"/></svg>Take the tour</a>
+        <a class="btn btn-ghost mag live" href="https://finora-ai-personal-finance.vercel.app/" target="_blank" rel="noopener"><span class="pulse-dot"></span>Live demo</a>
+      </div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="browser" id="tilt">
+        <div class="bar"><i></i><i></i><i></i><span>finora-ai-personal-finance.vercel.app/app</span></div>
+        <img src="docs/images/dashboard.png" alt="Finora dashboard with net position, monthly income and expenses, savings rate, budget remaining, income versus expenses chart and category donut" width="1440" height="900">
+      </div>
+      <div class="float f2"><span class="ic"><svg><use href="#i-db"/></svg></span><span><b>Tool trace</b><code>get_top_merchants()</code> queried PostgreSQL before the answer was written</span></div>
+      <div class="float f1"><span class="ic"><svg><use href="#i-alert"/></svg></span><span><b>Anomaly · robust z</b>₹64,990 is 29.0× your typical Shopping transaction</span></div>
+    </div>
+  </div>
+  <a class="scrollcue" href="#product" aria-label="Scroll to product tour"><i></i>SCROLL</a>
+</header>
+
+<div class="marquee" aria-label="Technology stack">
+  <div class="track" id="marquee">
+    <span><b>UI</b>React 18</span><span><b>UI</b>TypeScript 5.7</span><span><b>UI</b>Vite 6</span><span><b>UI</b>Tailwind CSS</span><span><b>UI</b>Framer Motion</span><span><b>UI</b>Recharts</span><span><b>UI</b>Lucide</span>
+    <span><b>API</b>FastAPI</span><span><b>API</b>Pydantic v2</span><span><b>API</b>SQLAlchemy 2.0</span><span><b>API</b>Alembic</span><span><b>DB</b>PostgreSQL 16</span><span><b>AUTH</b>PyJWT + bcrypt</span>
+    <span><b>ML</b>scikit-learn</span><span><b>ML</b>statsmodels</span><span><b>ML</b>pandas</span><span><b>ML</b>NumPy</span><span><b>OCR</b>Tesseract</span><span><b>OCR</b>OpenCV</span><span><b>OCR</b>Pillow</span>
+    <span><b>OPS</b>Docker Compose</span><span><b>OPS</b>nginx</span><span><b>OPS</b>Vercel</span><span><b>OPS</b>Render</span><span><b>OPS</b>GitHub Actions</span>
+  </div>
+</div>
+
+<div class="scope" aria-label="Scope counted from the source">
+  <div class="wrap">
+    <div class="grid">
+      <div class="cell"><div class="n num"><span data-count="64">64</span></div><div class="l">HTTP routes across 8 routers</div></div>
+      <div class="cell"><div class="n num"><span data-count="13">13</span></div><div class="l">PostgreSQL tables, one reversible migration</div></div>
+      <div class="cell"><div class="n num"><span data-count="13">13</span></div><div class="l">typed tools behind the AI assistant</div></div>
+      <div class="cell"><div class="n num"><span data-count="8">8</span></div><div class="l">deterministic insight detectors</div></div>
+      <div class="cell"><div class="n num"><span data-count="236">236</span></div><div class="l">backend test functions, run on Postgres in CI</div></div>
+      <div class="cell"><div class="n num"><span data-count="16">16</span></div><div class="l">frontend pages on one typed API client</div></div>
+    </div>
+    <p class="note">Counted from the repository. These are size figures, not usage or business metrics.</p>
+  </div>
+</div>
+
+<!-- PRODUCT CAROUSEL -->
+<section class="block" id="product" data-dot="Product">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">Product tour</span><h2>Real screens from the <em>running app</em></h2></div>
+      <p>A Playwright script signs in as the seeded demo user and captures each view. Nothing is mocked or retouched. Drag, swipe, use the arrow keys, or click a side slide to bring it forward.</p>
+    </div>
+    <div class="carousel" id="carousel" tabindex="0" aria-roledescription="carousel" aria-label="App screenshots">
+      <div class="car-stage" id="carStage"></div>
+      <div class="car-ui">
+        <div class="car-cap" aria-live="polite"><h3 id="carTitle"></h3><p id="carText"></p></div>
+        <div class="car-ctrl">
+          <button class="car-btn" type="button" id="carPrev" aria-label="Previous screenshot"><svg><use href="#i-left"/></svg></button>
+          <div class="car-dots" id="carDots"></div>
+          <button class="car-btn" type="button" id="carNext" aria-label="Next screenshot"><svg><use href="#i-right"/></svg></button>
+        </div>
+      </div>
+      <div class="car-progress"><i id="carBar"></i></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM FLIPS -->
+<section class="block alt" id="problem" data-dot="Problem">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">Problem → solution</span><h2>Money data is plentiful and <em>hard to use</em></h2></div>
+      <p>Hover over a card (or tap it on a phone) to flip from the problem to the part of Finora that addresses it. Every answer corresponds to real code.</p>
+    </div>
+    <div class="flips">
+      <div class="flip" tabindex="0"><div class="in">
+        <div class="face front"><span class="k">Problem 01</span><h3>Manual categorisation</h3><p>Bank narrations look like this, and someone has to turn them into "Food":</p><span class="big">UPI/SWGGY/428391/Food order</span><span class="hint"><svg><use href="#i-flip"/></svg><span class="h">Hover to see the fix</span></span></div>
+        <div class="face back"><span class="k">Solution</span><h3>Explainable ML categoriser</h3><p><strong>Word + character TF-IDF → Logistic Regression</strong> suggests a category while the user types, with confidence and the tokens behind it. It applies automatically only at <strong>≥ 45%</strong> confidence.</p></div>
+      </div></div>
+      <div class="flip" tabindex="0"><div class="in">
+        <div class="face front"><span class="k">Problem 02</span><h3>Hidden spending patterns</h3><p>Monthly totals don't show which category or merchant caused a change, or whether a partial month is being compared with a full one.</p><span class="hint"><svg><use href="#i-flip"/></svg><span class="h">Hover to see the fix</span></span></div>
+        <div class="face back"><span class="k">Solution</span><h3>Analytics + insight engine</h3><p>Equal-length period comparison and <strong>8 deterministic detectors</strong>. A change is reported only when it is both <strong>≥ 18% and ≥ ₹500</strong>.</p></div>
+      </div></div>
+      <div class="flip" tabindex="0"><div class="in">
+        <div class="face front"><span class="k">Problem 03</span><h3>Unexpected transactions</h3><p>Fixed rules like "flag anything over ₹5,000" don't fit anyone's real spending.</p><span class="hint"><svg><use href="#i-flip"/></svg><span class="h">Hover to see the fix</span></span></div>
+        <div class="face back"><span class="k">Solution</span><h3>Per-user anomaly detection</h3><p><strong>Median/MAD z-score</strong> per category plus an <strong>Isolation Forest</strong>, each flag with a reason a person can read.</p></div>
+      </div></div>
+      <div class="flip" tabindex="0"><div class="in">
+        <div class="face front"><span class="k">Problem 04</span><h3>No forward view</h3><p>People want to know what next month is likely to look like, and how sure the estimate is.</p><span class="hint"><svg><use href="#i-flip"/></svg><span class="h">Hover to see the fix</span></span></div>
+        <div class="face back"><span class="k">Solution</span><h3>Forecasts that state their uncertainty</h3><p>The model depends on how much history exists, with an <strong>80% interval</strong>. There is <strong>no forecast below 3 months</strong>, and the app says why.</p></div>
+      </div></div>
+      <div class="flip" tabindex="0"><div class="in">
+        <div class="face front"><span class="k">Problem 05</span><h3>Receipts stuck on paper</h3><p>Merchant, date, the CGST/SGST split and the total all have to be retyped.</p><span class="hint"><svg><use href="#i-flip"/></svg><span class="h">Hover to see the fix</span></span></div>
+        <div class="face back"><span class="k">Solution</span><h3>OCR the user reviews</h3><p><strong>OpenCV → Tesseract → rule-based parser</strong> with per-field confidence. Nothing reaches the ledger until the user confirms.</p></div>
+      </div></div>
+      <div class="flip" tabindex="0"><div class="in">
+        <div class="face front"><span class="k">Problem 06</span><h3>AI that invents figures</h3><p>Ask a language model about your money and it will give you a plausible number, right or wrong.</p><span class="hint"><svg><use href="#i-flip"/></svg><span class="h">Hover to see the fix</span></span></div>
+        <div class="face back"><span class="k">Solution</span><h3>Facts first, wording second</h3><p>Typed tools query PostgreSQL and Python does the arithmetic. <strong>The LLM only rephrases.</strong> With no API key, the answers contain the same numbers.</p></div>
+      </div></div>
+    </div>
+
+    <div class="thesis" id="thesis">
+      <div>
+        <span class="eyebrow" style="color:#FF9CA4">The organising rule</span>
+        <h3 style="margin-top:12px">The backend computes the facts. <em>The AI explains them.</em></h3>
+        <p>Remove the AI provider and the product still works. Every figure stays the same and only the prose gets plainer, and the UI labels which mode produced each answer.</p>
+      </div>
+      <div class="contract">
+        <div class="c facts"><h4>Deterministic code owns</h4><ul><li>Every query, scoped by <code>user_id</code></li><li>All arithmetic</li><li>Which tools run</li><li>Thresholds and refusals</li></ul></div>
+        <div class="c words"><h4>The LLM may only</h4><ul><li>Rephrase verified JSON facts</li><li>Carry caveats through</li><li>Say "not available"</li><li>Never add a number</li></ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE STORY -->
+<section class="block" id="architecture" data-dot="Architecture">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">System architecture</span><h2>Follow a request <em>down the stack</em></h2></div>
+      <p>Scroll through the steps and the layer each one describes lights up in the diagram. ML, OCR and the LLM are optional: each reports whether it's available, and the API starts without any of them.</p>
+    </div>
+    <div class="story">
+      <div class="steps" id="storySteps">
+        <article class="sstep" data-layer="L1"><span class="k">STEP 1 · BROWSER</span><h3>A React SPA with no secrets</h3><p>16 pages built on one <code>api/client.ts</code>. It's the only place that calls <code>fetch</code>. It attaches the JWT, applies a 30-second timeout, parses FastAPI's field errors and routes any 401 back to login.</p></article>
+        <article class="sstep" data-layer="L2"><span class="k">STEP 2 · EDGE</span><h3>nginx serves the app and proxies the API</h3><p>The browser always calls a relative <code>/api</code>, so there's one origin and no CORS preflight. nginx also sets the CSP and security headers.</p></article>
+        <article class="sstep" data-layer="L3"><span class="k">STEP 3 · API</span><h3>Thin routers and one auth gate</h3><p>Pydantic validates each request, and <code>get_current_user</code> turns the JWT into a user. Middleware adds <code>X-Request-ID</code> and timing headers. Routers hold no business rules.</p></article>
+        <article class="sstep" data-layer="L4"><span class="k">STEP 4 · LOGIC</span><h3>Services, and repositories that require an owner</h3><p>14 services hold the logic. Every repository helper takes a <code>user_id</code>, so there's no query that can return another user's rows, and cross-user access returns 404.</p></article>
+        <article class="sstep" data-layer="L5"><span class="k">STEP 5 · INTELLIGENCE</span><h3>ML, OCR, insights and AI</h3><p>These are pure computation modules that never touch the database directly. The LLM, shown dashed, is called only if <code>AI_API_KEY</code> is set, and it receives facts only.</p></article>
+        <article class="sstep" data-layer="L6"><span class="k">STEP 6 · DATA</span><h3>PostgreSQL is the single source of truth</h3><p>13 tables and <code>Numeric(14,2)</code> for money. Derived values are computed on read, and Alembic migrations are checked in CI by applying them up, down and up again.</p></article>
+      </div>
+      <div class="viz">
+        <div class="diagram" role="img" aria-label="Architecture layers from browser to database">
+          <div class="layer" id="L1"><div class="lh"><span>Browser · React + TypeScript</span><span>16 pages</span></div><div class="row r4"><div class="node"><b>Pages</b>dashboard…</div><div class="node"><b>useApi</b>abort stale</div><div class="node"><b>client.ts</b>JWT · errors</div><div class="node"><b>Contexts</b>auth · theme</div></div></div>
+          <div class="flow"><span>HTTPS</span></div>
+          <div class="layer" id="L2"><div class="lh"><span>Edge · nginx</span><span>CSP · gzip · /api proxy</span></div></div>
+          <div class="flow"><span>REST /api · Bearer JWT</span></div>
+          <div class="layer" id="L3"><div class="lh"><span>FastAPI</span><span>CORS · request-id</span></div><div class="row r4"><div class="node dark"><b>8 routers</b>thin</div><div class="node dark"><b>Pydantic</b>422 fields</div><div class="node dark"><b>Auth gate</b>JWT → user</div><div class="node dark"><b>Handlers</b>503 · 500+id</div></div></div>
+          <div class="flow"><span>call</span></div>
+          <div class="layer" id="L4"><div class="lh"><span>Logic</span><span>owner-scoped</span></div><div class="row r4"><div class="node"><b>14 services</b>logic</div><div class="node"><b>Repositories</b>user_id</div><div class="node"><b>Money utils</b>Decimal</div><div class="node"><b>Dates</b>periods</div></div></div>
+          <div class="flow"><span>compute</span></div>
+          <div class="layer" id="L5"><div class="lh"><span>Intelligence</span><span>optional at runtime</span></div><div class="row r4"><div class="node"><b>ML</b>cat · anomaly · forecast</div><div class="node"><b>OCR</b>CV · Tesseract</div><div class="node"><b>Insights</b>8 detectors</div><div class="node dash"><b>LLM</b>facts in, prose out</div></div></div>
+          <div class="flow"><span>SQLAlchemy</span></div>
+          <div class="layer" id="L6"><div class="lh"><span>Data</span><span>Alembic</span></div><div class="row r4"><div class="node dark"><b>PostgreSQL</b>13 tables</div><div class="node"><b>Uploads</b>volume</div><div class="node"><b>Model</b>.joblib</div><div class="node"><b>Seed</b>demo user</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="block alt" id="features" data-dot="Features">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">Key features</span><h2>Twelve features, <em>each with limits</em></h2></div>
+      <p>Every card is implemented and checked against the source. The mono chips are real constants from the code.</p>
+    </div>
+    <div class="feats">
+      <article class="feat tilt"><span class="ico"><svg><use href="#i-lock"/></svg></span><h3>Authentication</h3><p>JWT (HS256), bcrypt, timing-equalised login, hashed single-use reset tokens.</p><div class="spec"><span>cost 12</span><span>reset 30 min</span></div></article>
+      <article class="feat tilt"><span class="ico"><svg><use href="#i-list"/></svg></span><h3>Transactions</h3><p>CRUD, bulk delete, categories, and search with a whitelisted sort order.</p><div class="spec"><span>Numeric(14,2)</span><span>4 indexes</span></div></article>
+      <article class="feat tilt"><span class="ico"><svg><use href="#i-tag"/></svg></span><h3>ML categorisation</h3><p>Live preview, alternatives, token explanations and a correction loop.</p><div class="spec"><span>≥ 0.45 apply</span><span>12 classes</span></div></article>
+      <article class="feat tilt"><span class="ico"><svg><use href="#i-receipt"/></svg></span><h3>Receipt OCR</h3><p>OpenCV, Tesseract and a parser with per-field confidence.</p><div class="spec"><span>--psm 6</span><span>≤ 8 MB</span></div></article>
+      <article class="feat tilt"><span class="ico"><svg><use href="#i-alert"/></svg></span><h3>Anomaly detection</h3><p>A robust z-score and an Isolation Forest, with the reason stated on every flag.</p><div class="spec"><span>z ≥ 3.5</span><span>min 12 txns</span></div></article>
+      <article class="feat tilt"><span class="ico"><svg><use href="#i-trend"/></svg></span><h3>Forecasting</h3><p>Weighted moving average up to Holt-Winters, depending on how much history exists.</p><div class="spec"><span>80% PI</span><span>≥ 3 months</span></div></article>
+      <article class="feat tilt"><span class="ico"><svg><use href="#i-gauge"/></svg></span><h3>Health score</h3><p>A six-component weighted formula. Missing parts are left out, not guessed.</p><div class="spec"><span>A–E grades</span></div></article>
+      <article class="feat tilt"><span class="ico"><svg><use href="#i-bulb"/></svg></span><h3>Insight engine</h3><p>8 detectors, de-duplicated by fingerprint, isolated from each other's failures.</p><div class="spec"><span>max 12 / run</span></div></article>
+      <article class="feat tilt"><span class="ico"><svg><use href="#i-chat"/></svg></span><h3>AI assistant</h3><p>13 typed tools, rule-based routing and a deterministic fallback.</p><div class="spec"><span>≤ 4 tools</span></div></article>
+      <article class="feat tilt"><span class="ico"><svg><use href="#i-wallet"/></svg></span><h3>Budget recommendations</h3><p>Six-month history minus the highest month, with a buffer and rounding.</p><div class="spec"><span>= ₹9,750 test</span></div></article>
+      <article class="feat tilt"><span class="ico"><svg><use href="#i-target"/></svg></span><h3>Goals</h3><p>A contribution ledger and a completion date projected from real saving pace.</p><div class="spec"><span>ledger</span></div></article>
+      <article class="feat tilt"><span class="ico"><svg><use href="#i-chart"/></svg></span><h3>Dashboards</h3><p>A shared Recharts kit and a designed dark theme. Forecasts are drawn dashed.</p><div class="spec"><span>code-split</span></div></article>
+    </div>
+  </div>
+</section>
+
+<!-- ML PINNED HORIZONTAL -->
+<section class="hs" id="ml" data-dot="ML pipeline">
+  <div class="hs-sticky">
+    <div class="wrap">
+      <div class="shead" style="margin-bottom:26px">
+        <div><span class="eyebrow">ML pipeline</span><h2>From a raw narration to a <em>category you can trust</em></h2></div>
+        <p>Keep scrolling and the pipeline moves sideways. Training and serving import the same preprocessing module, so what the model learned is exactly what it's asked to predict.</p>
+      </div>
+    </div>
+    <div class="hs-track" id="hsTrack">
+      <article class="hs-card"><span class="k">01 · INPUT</span><h3>Raw text</h3><p>Merchant, description, payment method and transaction type, exactly as the bank wrote them.</p><div class="io">UPI/SWIGGY/428391/Food order</div></article>
+      <article class="hs-card"><span class="k">02 · NORMALISE</span><h3>Preprocess</h3><p>NFKD accent stripping and lowercasing. Card numbers, amounts, dates and 6+ digit reference numbers are masked, and narration stop tokens are dropped.</p><div class="io"><span class="dim">→</span> upi swiggy food order</div></article>
+      <article class="hs-card"><span class="k">03 · COMPOSE</span><h3>Build the document</h3><p>The merchant is repeated twice to up-weight the strongest signal. Payment method and type become prefixed tokens.</p><div class="io">swiggy swiggy … pay_upi type_expense</div></article>
+      <article class="hs-card"><span class="k">04 · FEATURES</span><h3>TF-IDF union</h3><p>Word 1–2 grams for merchants and phrases, plus char_wb 3–5 grams so misspellings like <code>SWGGY</code> and <code>AMAZONIN</code> still match.</p><div class="io">word ×1.0 ⊕ char ×0.6</div></article>
+      <article class="hs-card dark"><span class="k">05 · MODEL</span><h3>Logistic Regression</h3><p>Multinomial, C=4, balanced classes, 12 categories. It trains in seconds on CPU, so the Docker image trains it during the build.</p><div class="io">predict_proba → top-k</div></article>
+      <article class="hs-card"><span class="k">06 · EXPLAIN</span><h3>Why this category?</h3><p>For a linear model, each token's contribution is <code>tfidf × coefficient</code>, so the UI can show which words drove the prediction.</p><div class="io">[swiggy, food, order]</div></article>
+      <article class="hs-card"><span class="k">07 · POLICY</span><h3>Confidence gate</h3><p>At ≥ 0.45 the category is applied, and at ≥ 0.70 it's marked high confidence. Anything lower is only a suggestion, because a wrong category corrupts every chart after it.</p><div class="io">apply ≥ 0.45 · high ≥ 0.70</div></article>
+      <article class="hs-card dark"><span class="k">08 · LEARN</span><h3>Correction loop</h3><p>Overrides set <code>was_corrected</code> in <code>ml_predictions</code>. They're exported (text only), used in retraining, and loaded without a restart.</p><div class="io">export → train → reload_model()</div></article>
+    </div>
+    <div class="wrap"><div class="hs-bar"><i id="hsBar"></i></div></div>
+  </div>
+</section>
+
+<!-- ML DEEP DIVE -->
+<section class="block alt" id="ml-detail">
+  <div class="wrap">
+    <div class="two">
+      <div>
+        <span class="eyebrow">Confidence in practice</span>
+        <h2 style="font-size:clamp(28px,3.6vw,40px);font-weight:800;margin-top:12px">Same merchant, different category</h2>
+        <p style="color:var(--ink-2);margin-top:12px;max-width:52ch">These are real outputs of <code>python -m ml.predict</code>, recorded in the project README. Switch between them to see the confidence gate in action.</p>
+        <div class="panel" style="margin-top:22px">
+          <div class="seg" role="group" aria-label="Example narration">
+            <button type="button" id="ex-a" aria-pressed="true">Prime Video</button>
+            <button type="button" id="ex-b" aria-pressed="false">Laptop sleeve</button>
+          </div>
+          <div class="term"><span class="pr">$</span> python -m ml.predict <span id="t-q">"AMAZONIN prime video subscription"</span><br><span class="dim">category   :</span> <span id="t-c">Entertainment</span><br><span class="dim">confidence :</span> <span id="t-p">88.10%</span></div>
+          <div class="conf-row"><span class="cat" id="c-cat">Entertainment</span><span class="pct num" id="c-pct">88.10%</span></div>
+          <div class="trk"><div class="fill" id="c-fill" style="width:88.1%"></div><div class="mark" style="left:45%"><span>apply 45%</span></div><div class="mark" style="left:70%"><span>high 70%</span></div></div>
+          <div class="verdict ok" id="c-verdict"><svg><use href="#i-check"/></svg><span>Applied automatically and logged to <code>ml_predictions</code>.</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><h3>Held-out evaluation</h3><span class="tag verify">Synthetic data</span></div>
+        <p>From <code>ml.train</code>: a stratified 80/20 split, then a refit on all data. CI checks that the 1,848-row dataset regenerates byte-for-byte.</p>
+        <div class="tscroll"><table class="metrics num"><thead><tr><th>Acc</th><th>Prec</th><th>Recall</th><th>F1</th><th>5-fold F1</th></tr></thead><tbody><tr><td>0.957</td><td>0.962</td><td>0.962</td><td>0.961</td><td>0.956</td></tr></tbody></table></div>
+        <div class="note"><svg><use href="#i-alert"/></svg><span>These numbers come from generated demonstration data, not real bank statements. An earlier version scored 100% because each merchant mapped to exactly one category, so the dataset was made harder. A test now fails if accuracy reaches 1.0.</span></div>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:28px">
+      <div class="panel">
+        <h3>Anomaly: how far out is "unusual"?</h3>
+        <p>A real flag from the demo data, drawn on a log scale. The blue band is the user's usual Shopping range and the black line is its median.</p>
+        <div class="strip" role="img" aria-label="Log-scale strip: usual Shopping range 725 to 3,860 rupees, median 2,238; flagged transaction at 64,990 rupees, 29 times the median">
+          <svg viewBox="0 0 520 120">
+            <!-- log10 scale: 500 → 30, 100000 → 500 -->
+            <line class="axis" x1="30" y1="70" x2="500" y2="70"/>
+            <rect class="band" x="45.3" y="54" width="124.9" height="32" rx="6"/>
+            <line class="med" x1="144.6" y1="48" x2="144.6" y2="92"/>
+            <circle class="pulse" cx="438.3" cy="70" r="7"/>
+            <circle class="out" cx="438.3" cy="70" r="7"/>
+            <text class="lbl" x="107" y="40" text-anchor="middle">usual ₹725–₹3,860</text>
+            <text x="144.6" y="108" text-anchor="middle">median ₹2,238</text>
+            <text class="lbl-r" x="438.3" y="44" text-anchor="middle">₹64,990 · 29.0×</text>
+            <text x="30" y="108">₹500</text>
+            <text x="500" y="108" text-anchor="end">₹1,00,000</text>
+          </svg>
+        </div>
+        <div class="rule">z = <span class="n">0.6745</span> · (x − median) / MAD<br><span class="kw">flag if</span> z ≥ <span class="n">3.5</span> <span class="kw">or</span> (IsolationForest == −1 <span class="kw">and</span> z ≥ <span class="n">2.0</span>)<br><span class="dim"># 365-day baseline · new flags only in the last 90 days</span></div>
+      </div>
+      <div class="panel">
+        <h3>Forecast model ladder</h3>
+        <p>Fitting seasonality to five data points produces a confident-looking line with no information in it, so the model depends on how many months exist.</p>
+        <div class="ladder" role="img" aria-label="0–3 months none; 3–6 weighted moving average; 6–12 simple exponential smoothing; 12–24 damped Holt; 24+ Holt-Winters">
+          <div class="bar"><div class="lz0" style="flex:3" title="Below 3 months: no forecast">none</div><div class="lz1" style="flex:3" title="3+ months">WMA</div><div class="lz2" style="flex:6" title="6+ months">SES</div><div class="lz3" style="flex:12" title="12+ months">Holt damped</div><div class="lz4" style="flex:6" title="24+ months">Holt-Winters</div></div>
+          <div class="ticks"><span style="left:0">0</span><span style="left:10%">3</span><span style="left:20%">6</span><span style="left:40%">12</span><span style="left:80%">24 mo</span></div>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-top:4px">It uses an 80% interval widening as σ·√h, because a 95% band on about 12 monthly points is too wide to be useful.</p>
+        <h3 style="margin-top:22px">Health score weights</h3>
+        <div class="weights" role="img" aria-label="Savings 30, budget 20, stability 15, emergency 15, goals 10, income 10 percent">
+          <div class="w1" style="flex:30 1 0;--g:30"><b>30%</b>savings</div><div class="w2" style="flex:20 1 0;--g:20"><b>20%</b>budget</div><div class="w3" style="flex:15 1 0;--g:15"><b>15%</b>stable</div><div class="w4" style="flex:15 1 0;--g:15"><b>15%</b>emergency</div><div class="w5" style="flex:10 1 0;--g:10"><b>10%</b>goals</div><div class="w6" style="flex:10 1 0;--g:10"><b>10%</b>income</div>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-top:8px">Hover a segment to widen it. A 20% savings rate scores 85, and six months of expenses is the emergency-fund target. Components that can't be measured are left out and the remaining weights renormalised.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OCR -->
+<section class="block" id="ocr" data-dot="OCR">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">Receipt OCR pipeline</span><h2>Noisy photos in, <em>reviewed</em> transactions out</h2></div>
+      <p>The illustration shows what the parser extracts and how confident it is in each field. Split GST lines are summed, and a field it can't find comes back empty with a warning instead of a guess.</p>
+    </div>
+    <div class="ocr">
+      <div class="paper-wrap">
+        <div class="paper" aria-label="Illustrative receipt">
+          <div class="beam" aria-hidden="true"></div>
+          <div class="c"><b>CHAI &amp; CO. CAFE</b><br>MG Road, Bengaluru<br>GSTIN 29XXXXX1234X1ZX</div>
+          <div class="hr"></div>
+          <div class="ln hit"><span>Date</span><span>14/09/2026</span></div>
+          <div class="hr"></div>
+          <div class="ln"><span>Masala chai x2</span><span>180.00</span></div>
+          <div class="ln"><span>Paneer sandwich</span><span>220.00</span></div>
+          <div class="ln"><span>Filter coffee</span><span>120.00</span></div>
+          <div class="hr"></div>
+          <div class="ln hit"><span>Subtotal</span><span>520.00</span></div>
+          <div class="ln hit"><span>CGST 2.5%</span><span>13.00</span></div>
+          <div class="ln hit"><span>SGST 2.5%</span><span>13.00</span></div>
+          <div class="ln hit"><span><b>GRAND TOTAL</b></span><span><b>546.00</b></span></div>
+          <div class="hr"></div>
+          <div class="c">Paid via UPI · Thank you!</div>
+        </div>
+      </div>
+      <div>
+        <div class="parsed" aria-label="Parsed receipt fields">
+          <div class="hd"><span>parse_receipt() → fields</span><span class="tag illus" style="letter-spacing:.04em">Illustration</span></div>
+          <div class="row2"><span class="kk">merchant</span><span class="vv">"Chai &amp; Co. Cafe"</span><span class="cc hi">high</span></div>
+          <div class="row2"><span class="kk">date</span><span class="vv">2026-09-14</span><span class="cc hi">high</span></div>
+          <div class="row2"><span class="kk">subtotal</span><span class="vv">520.00</span><span class="cc hi">high</span></div>
+          <div class="row2"><span class="kk">tax</span><span class="vv">26.00 <span style="color:#6F84A6">(CGST+SGST)</span></span><span class="cc md">summed</span></div>
+          <div class="row2"><span class="kk">total</span><span class="vv">546.00</span><span class="cc hi">keyword</span></div>
+          <div class="row2"><span class="kk">items</span><span class="vv">3 lines</span><span class="cc md">review</span></div>
+        </div>
+        <div class="chips">
+          <span class="chip"><b>01</b> magic-byte check</span><span class="chip"><b>02</b> grayscale</span><span class="chip"><b>03</b> upscale ≥1200px</span><span class="chip"><b>04</b> denoise</span><span class="chip"><b>05</b> deskew ≤15°</span><span class="chip"><b>06</b> adaptive threshold</span><span class="chip"><b>07</b> Tesseract --psm 6</span><span class="chip"><b>08</b> parse + confidence</span><span class="chip"><b>09</b> user review</span><span class="chip"><b>10</b> confirm → transaction</span>
+        </div>
+        <p class="cap">The receipt is an illustration of the parser's rules, not an app capture. The confidence labels summarise how each field is found. A regression test covers a real bug where <code>1923.60</code> was parsed as <code>192</code> + <code>3.60</code>.</p>
+      </div>
+    </div>
+    <div class="two" style="margin-top:48px">
+      <button class="zoom" type="button" data-cap="Receipt scanner running without Tesseract: a clear message and a manual fallback, while every other feature keeps working"><img src="docs/images/receipt-ocr.png" alt="Receipt scanner page showing that Tesseract is unavailable, with install instructions and manual entry still possible" loading="lazy" width="1440" height="900"></button>
+      <div>
+        <span class="tag built">Graceful degradation</span>
+        <h3 style="font-size:26px;font-weight:800;margin-top:12px">What happens when Tesseract is missing</h3>
+        <p style="color:var(--ink-2);margin-top:10px">This is a real capture from a machine without Tesseract installed. The app doesn't crash or pretend to scan. It explains what's missing, shows how to install it, and lets the user enter the receipt manually. <code>GET /api/receipts/ocr-status</code> reports the same state. The Docker image ships with Tesseract installed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI -->
+<section class="block alt" id="assistant" data-dot="AI assistant">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">AI assistant</span><h2>The language model is a <em>presentation layer</em></h2></div>
+      <p>The conversation below replays a real answer from the app's screenshot, running with no API key. The tool calls happen first, and the answer is built only from what they return.</p>
+    </div>
+    <div class="two" style="align-items:start">
+      <div class="chat" id="chat">
+        <div class="top"><span>Finora Assistant <span class="tag built" style="margin-left:6px">deterministic</span></span><button class="replay" type="button" id="replay">Replay</button></div>
+        <div class="body" id="chatBody">
+          <div class="msg u">Where did I spend the most this month?</div>
+          <div class="tl"><code><b>✓</b> get_top_merchants()</code><code><b>✓</b> get_category_spending()</code><code><b>✓</b> get_monthly_spending()</code></div>
+          <div class="msg a">Top merchants this month: House Rent Payment ₹32,000, HDFC Mutual Fund ₹15,000, Axis Bluechip SIP ₹7,500, Amazon India ₹5,987, Bigbasket ₹5,416.<ul><li>Top categories: Rent ₹32,000 (27%), Investments ₹22,500 (19%), Food ₹17,432 (15%)…</li><li>This month: income ₹156,600, expenses ₹116,666, net ₹39,934 (25.5% savings rate) across 77 transactions.</li></ul></div>
+        </div>
+      </div>
+      <div class="seq">
+        <div class="r"><span class="n">1</span><div><h4>Deterministic routing</h4><p>Ordered regex rules pick at most 4 of 13 tools. The LLM never chooses what data to fetch, so a prompt injection can't request arbitrary data.</p></div></div>
+        <div class="r"><span class="n">2</span><div><h4>Typed tools query PostgreSQL</h4><p>Each tool returns structured <code>data</code> plus a readable <code>summary</code>, always scoped to the signed-in user.</p></div></div>
+        <div class="r"><span class="n">3</span><div><h4>Python does the arithmetic</h4><p>"How much can I save if I cut shopping by 20%?" The percentage is parsed from the question and <code>get_savings_simulation</code> computes the answer.</p></div></div>
+        <div class="r llm"><span class="n">4</span><div><h4>Phrase, or fall back</h4><p>If a key is set, the LLM gets a verified JSON block of facts and is told never to add a number. With no key or on any error, the tool summaries are joined into the answer instead, with the same figures.</p></div></div>
+        <div class="r"><span class="n">5</span><div><h4>Show the source</h4><p>Each answer comes back with its tool trace, the facts and <code>generation_mode</code>. A test checks that a broken provider still returns correct numbers.</p></div></div>
+        <div class="note"><svg><use href="#i-alert"/></svg><span><b>Not built yet:</b> a check after generation that every number in the LLM's reply appears in the facts. For now, the architecture and the prompt enforce this rule; the output itself isn't validated.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DARK MODE COMPARE -->
+<section class="block" id="theme" data-dot="Theme">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">Design system</span><h2>One dashboard, <em>two themes</em></h2></div>
+      <p>Drag the handle. Tailwind colours are defined as CSS variables, so the dark theme swaps the palette itself rather than inverting it: navy becomes the surface and the red lightens to stay readable.</p>
+    </div>
+    <div class="compare" id="compare">
+      <img src="docs/images/dark-mode.png" alt="Finora dashboard in dark mode" width="1440" height="900" loading="lazy">
+      <img class="topimg" src="docs/images/dashboard.png" alt="Finora dashboard in light mode" width="1440" height="900" loading="lazy">
+      <span class="lab l">Light</span><span class="lab r">Dark</span>
+      <div class="handle" aria-hidden="true"></div>
+      <input type="range" id="cmpRange" min="0" max="100" value="50" aria-label="Compare light and dark themes">
+    </div>
+  </div>
+</section>
+
+<!-- DATA & API -->
+<section class="block alt" id="data" data-dot="Data & API">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">Database &amp; API</span><h2>One owner per row, <em>one shape per error</em></h2></div>
+      <p>Every user-owned table cascades from <code>users</code>, and primary keys are UUID4 strings, so IDs in URLs can't be guessed. Budget spend is never stored; it's recomputed on every read.</p>
+    </div>
+    <div class="er">
+      <div class="tbl wide"><div class="th">users <small>owner of everything · ON DELETE CASCADE</small></div><ul><li><b>PK</b> id UUID4 · email unique</li><li>password_hash · reset_token_hash</li><li>monthly_income · emergency_fund_target</li><li>onboarding_completed · is_active</li></ul></div>
+      <div class="tbl"><div class="th">transactions <small>ledger</small></div><ul><li><b>FK</b> user · category · receipt</li><li>amount Numeric(14,2)</li><li>type · source · anomaly_status</li><li>idx (user, date) + 3 more</li></ul></div>
+      <div class="tbl"><div class="th">categories</div><ul><li><b>FK</b> user_id (NULL = system)</li><li>UNIQUE (user_id, name)</li><li>idx (user_id, kind)</li></ul></div>
+      <div class="tbl"><div class="th">ml_predictions <small>audit + training</small></div><ul><li><b>FK</b> user · transaction</li><li>predicted vs final category</li><li>confidence · was_corrected</li></ul></div>
+      <div class="tbl"><div class="th">budgets → budget_items</div><ul><li>UNIQUE (user, period_month)</li><li>UNIQUE (budget, category)</li><li>limit · recommended_amount</li></ul></div>
+      <div class="tbl"><div class="th">receipts → receipt_items</div><ul><li>uploaded → processed → confirmed</li><li>raw OCR text kept</li><li>subtotal · tax · total</li></ul></div>
+      <div class="tbl"><div class="th">financial_goals → contributions</div><ul><li>target_amount · status</li><li>idx (user_id, status)</li><li>dated contribution ledger</li></ul></div>
+      <div class="tbl"><div class="th">insights</div><ul><li>type · severity · JSON data</li><li>fingerprint → idempotent</li><li>idx (user, created)</li></ul></div>
+      <div class="tbl"><div class="th">ai_conversations → messages</div><ul><li>idx (user, updated_at)</li><li>idx (conversation, created_at)</li></ul></div>
+    </div>
+    <div class="api">
+      <div class="api-tabs" role="tablist" aria-label="API areas" id="apiTabs"></div>
+      <ul class="api-list" id="apiList" role="tabpanel"></ul>
+      <div class="api-foot"><span>Paths from <code>backend/app/routers</code>, all under <code>/api</code> · OpenAPI at <code>/api/docs</code></span><span>422 with field errors · 503 on DB errors · 404 for other users' data</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECURITY -->
+<section class="block" id="security" data-dot="Security">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">Security</span><h2>Protections built into the structure, <em>gaps listed</em></h2></div>
+      <p>Most protections come from how the code is organised, so no individual route has to remember them. The known gaps are listed below the cards.</p>
+    </div>
+    <div class="sec">
+      <div class="it tilt"><h4><svg><use href="#i-shield"/></svg>Passwords</h4><p>bcrypt with cost 12, plus SHA-256 pre-hashing for passwords longer than 72 bytes. A malformed hash fails closed instead of erroring.</p></div>
+      <div class="it tilt"><h4><svg><use href="#i-shield"/></svg>JWT</h4><p>Signature, expiry and <code>type == "access"</code> are checked on every request. Tests confirm forged tokens are rejected.</p></div>
+      <div class="it tilt"><h4><svg><use href="#i-shield"/></svg>No account enumeration</h4><p>Login takes the same time for unknown emails, and forgot-password gives the same response either way.</p></div>
+      <div class="it tilt"><h4><svg><use href="#i-shield"/></svg>Data isolation</h4><p>Every query needs a <code>user_id</code>, and other users' data returns 404. Ten tests cover this.</p></div>
+      <div class="it tilt"><h4><svg><use href="#i-shield"/></svg>Input validation</h4><p>Pydantic on every endpoint, a whitelisted <code>ORDER BY</code> and parameterised queries throughout.</p></div>
+      <div class="it tilt"><h4><svg><use href="#i-shield"/></svg>Uploads</h4><p>An 8 MB limit, a MIME allow-list, magic-byte checks and server-generated filenames.</p></div>
+      <div class="it tilt"><h4><svg><use href="#i-shield"/></svg>CORS &amp; headers</h4><p>An explicit list of allowed origins (never <code>*</code>). nginx adds a CSP, nosniff and <code>X-Frame-Options: DENY</code>.</p></div>
+      <div class="it tilt"><h4><svg><use href="#i-shield"/></svg>Secrets</h4><p>Secrets live only in environment variables. Docker Compose refuses to start without <code>JWT_SECRET</code>, and the frontend holds none.</p></div>
+      <div class="it tilt"><h4><svg><use href="#i-shield"/></svg>Logs</h4><p>Passwords, tokens and keys are redacted from logs, SQL errors never reach the client, and the container runs as a non-root user.</p></div>
+    </div>
+    <div class="gaps">
+      <h4><svg><use href="#i-alert"/></svg>Known gaps, not yet addressed</h4>
+      <ul>
+        <li>No rate limiting on <code>/auth/login</code> or <code>/ai/chat</code>.</li>
+        <li>No token revocation: logging out doesn't invalidate a token, which stays valid until it expires (12 hours by default).</li>
+        <li>The JWT is kept in <code>localStorage</code>. The CSP reduces XSS risk, but an httpOnly cookie would be safer.</li>
+        <li>Receipt images are stored unencrypted on disk.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- DEPLOY -->
+<section class="block alt" id="deploy" data-dot="Deploy">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">Deployment</span><h2>Containers locally, <em>Vercel + Render</em> in production</h2></div>
+      <p>Locally everything runs in Docker Compose. In production the React build is served by Vercel at <a href="https://finora-ai-personal-finance.vercel.app/" target="_blank" rel="noopener">finora-ai-personal-finance.vercel.app</a>, and the API and database run on Render.</p>
+    </div>
+    <div class="dtabs seg" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-tab="local">Local · Docker Compose</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="prod">Production · Vercel + Render</button>
+    </div>
+    <div class="dpanel" id="tab-local">
+      <div class="dflow">
+        <div class="dnode"><span class="k">CLIENT</span><h4>Browser :5173</h4><p>calls a relative <code>/api</code></p></div><div class="dj"></div>
+        <div class="dnode dark"><span class="k">FRONTEND</span><h4>nginx:1.27-alpine</h4><p>node:22 build → static site · CSP · gzip · proxy</p></div><div class="dj"></div>
+        <div class="dnode dark"><span class="k">BACKEND</span><h4>python:3.12-slim</h4><p>Tesseract installed · model trained during the build · non-root · waits for the DB → runs migrations → seeds → starts uvicorn</p></div><div class="dj"></div>
+        <div class="dnode"><span class="k">DATABASE</span><h4>postgres:16-alpine</h4><p>pg_isready health check · named volumes</p></div>
+      </div>
+    </div>
+    <div class="dpanel" id="tab-prod" hidden>
+      <div class="dflow">
+        <div class="dnode"><span class="k">CLIENT</span><h4>Browser</h4><p>HTTPS</p></div><div class="dj"></div>
+        <div class="dnode dark"><span class="k">VERCEL · LIVE</span><h4>Frontend</h4><p>Vite build served at <a href="https://finora-ai-personal-finance.vercel.app/" target="_blank" rel="noopener" style="color:#fff">finora-ai-personal-finance.vercel.app</a></p></div><div class="dj" title="HTTPS via VITE_API_URL"></div>
+        <div class="dnode dark"><span class="k">RENDER WEB</span><h4>finora-backend</h4><p>Docker · <code>finora-backend-kihu.onrender.com</code> · health check on <code>/api/health</code> · Alembic migrations on boot · <code>JWT_SECRET</code> generated by Render</p></div><div class="dj"></div>
+        <div class="dnode"><span class="k">RENDER DB</span><h4>finora-db</h4><p><code>DATABASE_URL</code> injected, then rewritten for the psycopg 3 driver</p></div>
+      </div>
+      <div class="note"><svg><use href="#i-alert"/></svg><span>The Vercel project is configured in the Vercel dashboard, not in the repository (there's no <code>vercel.json</code>). The deployed bundle calls the Render API directly at <code>finora-backend-kihu.onrender.com/api</code>, set at build time through <code>VITE_API_URL</code>, so the Vercel origin must be listed in the backend's <code>CORS_ORIGINS</code>. <code>render.yaml</code> also defines an nginx frontend on Render.</span></div>
+    </div>
+    <h3 style="font-size:20px;font-weight:700;margin-top:36px">CI on every push · GitHub Actions</h3>
+    <div class="ci" id="ci">
+      <div class="job"><h4>backend</h4><p>Postgres 16 · Alembic up/down/up · pytest · seed</p></div>
+      <div class="job"><h4>ml</h4><p>dataset reproducibility · train + CV · evaluate · smoke test</p></div>
+      <div class="job"><h4>frontend</h4><p>typecheck · Vitest · build</p></div>
+      <div class="job"><h4>docker</h4><p>both images · tesseract --version</p></div>
+      <div class="job"><h4>lint</h4><p>Ruff · ESLint, zero warnings allowed</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CHALLENGES SCROLLER -->
+<section class="block" id="challenges" data-dot="Challenges">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">Engineering challenges</span><h2>What was hard, <em>and how it was solved</em></h2></div>
+      <p>Drag, swipe or use the arrows. Each challenge is traced to code, a test or a commit, and one is still open.</p>
+    </div>
+    <div class="cscroll-wrap">
+      <div class="cscroll" id="cscroll">
+        <article class="ch"><div class="hd"><span class="no">01</span><span class="src">ml/preprocessing.py</span></div><h3>Train/serve skew</h3><dl><dt>Problem</dt><dd>The model is trained from the repository root but served from <code>backend/</code>, so the two could normalise text differently without anyone noticing.</dd><dt class="fix">Fix</dt><dd>One shared <code>ml</code> package, <code>PYTHONPATH=/srv</code> in Docker, and a <code>PIPELINE_VERSION</code> check when the model loads.</dd></dl></article>
+        <article class="ch"><div class="hd"><span class="no">02</span><span class="src">ml/build_dataset.py</span></div><h3>A model that scored 100%</h3><dl><dt>Problem</dt><dd>Every merchant mapped to exactly one category, so the model was just a lookup table.</dd><dt class="fix">Fix</dt><dd>A harder dataset with ambiguous and garbled merchants, a test that fails at 1.0, and a CI check that the dataset regenerates byte-for-byte.</dd></dl></article>
+        <article class="ch"><div class="hd"><span class="no">03</span><span class="src">ocr/parser.py</span></div><h3>Noisy OCR output</h3><dl><dt>Problem</dt><dd>Skewed photos, plus a regex that read ₹1,923.60 as ₹3.60.</dd><dt class="fix">Fix</dt><dd>Image preprocessing, per-field confidence, a review step before saving, and a regression test.</dd></dl></article>
+        <article class="ch"><div class="hd"><span class="no">04</span><span class="src">ml/anomaly.py</span></div><h3>Statistics on real spending</h3><dl><dt>Problem</dt><dd>Identical subscription payments make MAD zero, and a single large purchase distorts the mean.</dd><dt class="fix">Fix</dt><dd>MAD with fallbacks, per-category baselines, and Isolation Forest flags that only count when z ≥ 2.</dd></dl></article>
+        <article class="ch"><div class="hd"><span class="no">05</span><span class="src">ai/assistant.py</span></div><h3>Unreliable LLM output</h3><dl><dt>Problem</dt><dd>LLMs invent figures, and the provider can time out.</dd><dt class="fix">Fix</dt><dd>Retrieval first, arithmetic in Python, a constrained prompt, and a fallback that gives the same figures.</dd></dl></article>
+        <article class="ch"><div class="hd"><span class="no">06</span><span class="src">ci.yml</span></div><h3>Reversible migrations</h3><dl><dt>Problem</dt><dd>Migrations that only go forward, and SQLite in development ignoring foreign keys.</dd><dt class="fix">Fix</dt><dd>Migrations run up → down → up on real Postgres in CI, SQLite foreign-key enforcement is switched on, and the container waits for the DB before migrating.</dd></dl></article>
+        <article class="ch"><div class="hd"><span class="no">07</span><span class="src">commit f3d7aa4</span></div><h3>Build broke on deploy</h3><dl><dt>Problem</dt><dd><code>tsc -b</code> failed because the Vite config uses <code>node:path</code> without Node's type definitions installed.</dd><dt class="fix">Fix</dt><dd>Added <code>@types/node</code>. Lesson: run the same build locally that the host runs.</dd></dl></article>
+        <article class="ch"><div class="hd"><span class="no">08</span><span class="src">commit b6a88f8</span></div><h3>One nginx config, two environments</h3><dl><dt>Problem</dt><dd>Pointing <code>proxy_pass</code> at Render means local Compose now proxies to production.</dd><dt class="open">Open</dt><dd>Planned fix: generate the upstream from an environment variable with <code>envsubst</code> and set <code>proxy_ssl_server_name on</code>.</dd></dl></article>
+      </div>
+      <div class="cs-ctrl"><button class="car-btn" type="button" id="csPrev" aria-label="Previous challenge"><svg><use href="#i-left"/></svg></button><button class="car-btn" type="button" id="csNext" aria-label="Next challenge"><svg><use href="#i-right"/></svg></button></div>
+    </div>
+
+    <h3 style="font-size:24px;font-weight:800;margin:52px 0 16px">Key decisions and their trade-offs</h3>
+    <div class="acc">
+      <details open><summary>The LLM only rephrases verified facts; tool routing is rule-based<i><svg><use href="#i-plus"/></svg></i></summary><div class="bd"><div class="why"><b>Why</b>Correctness, auditability and resistance to prompt injection, and it works offline.</div><div class="tr"><b>Trade-off</b>Less flexible than LLM tool-calling; unusual phrasings may be routed badly.</div></div></details>
+      <details><summary>TF-IDF + Logistic Regression rather than a deep model<i><svg><use href="#i-plus"/></svg></i></summary><div class="bd"><div class="why"><b>Why</b>Trains in seconds on CPU, gives calibrated probabilities, has explainable coefficients, and trains during the Docker build.</div><div class="tr"><b>Trade-off</b>A lower ceiling on understanding meaning; relies on feature engineering.</div></div></details>
+      <details><summary>Apply categories automatically only above 0.45 confidence<i><svg><use href="#i-plus"/></svg></i></summary><div class="bd"><div class="why"><b>Why</b>A wrong category that nobody notices costs more than asking the user.</div><div class="tr"><b>Trade-off</b>More prompts for ambiguous merchants.</div></div></details>
+      <details><summary>Rule-based receipt parser<i><svg><use href="#i-plus"/></svg></i></summary><div class="bd"><div class="why"><b>Why</b>Auditable, needs no GPU or third party, and reports confidence per field.</div><div class="tr"><b>Trade-off</b>Brittle on receipt layouts it hasn't seen.</div></div></details>
+      <details><summary>Compute derived values on read<i><svg><use href="#i-plus"/></svg></i></summary><div class="bd"><div class="why"><b>Why</b>They can never drift from the ledger.</div><div class="tr"><b>Trade-off</b>More work per request, and there's no caching yet.</div></div></details>
+      <details><summary>Stateless JWT kept in localStorage<i><svg><use href="#i-plus"/></svg></i></summary><div class="bd"><div class="why"><b>Why</b>Simple, scales horizontally, and needs no session store.</div><div class="tr"><b>Trade-off</b>No revocation, and exposure to XSS (reduced by the CSP).</div></div></details>
+    </div>
+  </div>
+</section>
+
+<!-- TESTING -->
+<section class="block alt" id="testing" data-dot="Testing">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">Testing · performance</span><h2>Tests that check <em>behaviour</em></h2></div>
+      <p>The backend tests run against PostgreSQL in CI. There are no load tests yet, so no latency or throughput numbers are claimed.</p>
+    </div>
+    <div class="tcols">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><h3>Implemented</h3><span class="tag built">In CI</span></div>
+        <div class="tstat num"><div><b data-count="236">236</b><span>backend test functions (281 collected, per the README)</span></div><div><b data-count="36">36</b><span>frontend tests</span></div><div><b data-count="4">4</b><span>real bugs caught during development</span></div></div>
+        <ul class="list">
+          <li><svg><use href="#i-check"/></svg><span><strong>Isolation:</strong> user B can't read, change or aggregate user A's data.</span></li>
+          <li><svg><use href="#i-check"/></svg><span><strong>Exact values:</strong> the budget worked example must produce exactly ₹9,750.</span></li>
+          <li><svg><use href="#i-check"/></svg><span><strong>Refusals:</strong> no forecast under 3 months, no anomaly check under 12 transactions, no budget recommendation under 2 months of history.</span></li>
+          <li><svg><use href="#i-check"/></svg><span><strong>Resilience:</strong> a broken LLM provider still returns the correct figures.</span></li>
+        </ul>
+      </div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><h3>Next</h3><span class="tag plan">Planned</span></div>
+        <ul class="list">
+          <li><svg style="color:var(--warn)"><use href="#i-arrow"/></svg><span>End-to-end Playwright assertions (Playwright currently only captures screenshots)</span></li>
+          <li><svg style="color:var(--warn)"><use href="#i-arrow"/></svg><span>Load tests and an OCR accuracy benchmark</span></li>
+          <li><svg style="color:var(--warn)"><use href="#i-cpu"/></svg><span><strong>Bottleneck:</strong> OCR runs inside the request, so move it to a job queue</span></li>
+          <li><svg style="color:var(--warn)"><use href="#i-cpu"/></svg><span><strong>Bottleneck:</strong> the Isolation Forest is refit on every request, so cache the results</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LESSONS -->
+<section class="block" id="lessons" data-dot="Lessons">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">What I learned</span><h2>Lessons from <em>building it</em></h2></div>
+      <p>The biggest shift was treating the model as one component among many. Most of the engineering went into the code around it.</p>
+    </div>
+    <div class="lessons">
+      <div class="lesson"><h4>Full-stack architecture</h4><p>With one layer per concern, data isolation is enforced in one place instead of in every route.</p></div>
+      <div class="lesson"><h4>Production ML</h4><p>Shared preprocessing, versioned artefacts and a confidence policy mattered more than which classifier I picked.</p></div>
+      <div class="lesson"><h4>API design</h4><p>Action sub-resources, one error shape and explicit "insufficient data" responses made the frontend simpler.</p></div>
+      <div class="lesson"><h4>Database design</h4><p>Decimal for money, derived values computed on read, and indexes designed around the real queries.</p></div>
+      <div class="lesson"><h4>OCR</h4><p>Preprocessing drives most of the accuracy. For the remaining errors, show the confidence and ask the user.</p></div>
+      <div class="lesson"><h4>Deployment</h4><p>A setup that works in Compose still needs changes for a managed host. Config should be templated, not edited in place.</p></div>
+      <div class="lesson"><h4>Security</h4><p>Protections built into the structure beat checks added route by route, and the gaps should be written down.</p></div>
+      <div class="lesson"><h4>AI system design</h4><p>An assistant that stays correct with the model switched off is one people can trust.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section class="block alt" id="roadmap" data-dot="Roadmap">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">Future roadmap</span><h2>Where it goes <em>next</em></h2></div>
+      <p>Everything after the first card is future work and <b>not yet implemented</b>. The line fills in as you scroll.</p>
+    </div>
+    <div class="tline" id="tline">
+      <div class="fillbar" id="tfill"></div>
+      <div class="ph"><div class="hd"><h3>Today: core platform</h3><span class="tag built">Built</span></div><p>Auth, transactions, ML categorisation with a correction loop, OCR, anomalies, forecasts, health score, insights, the grounded assistant, Docker, CI and a Render blueprint.</p></div>
+      <div class="ph"><div class="hd"><h3>Phase 1: better ML evaluation</h3><span class="tag plan">Future</span></div><p>A labelled benchmark of real (consented, anonymised) narrations kept separate from the synthetic training data, plus a promotion gate so a retrained model can't be released if it's worse.</p></div>
+      <div class="ph"><div class="hd"><h3>Phase 2: improved OCR</h3><span class="tag plan">Future</span></div><p>Layout-aware line-item parsing, a merchant dictionary, multilingual Tesseract packs and a labelled receipt benchmark.</p></div>
+      <div class="ph"><div class="hd"><h3>Phase 3: background jobs</h3><span class="tag plan">Future</span></div><p>A job queue for OCR, anomaly scans, insights and retraining, and object storage for receipts.</p></div>
+      <div class="ph"><div class="hd"><h3>Phase 4: model monitoring</h3><span class="tag plan">Future</span></div><p>Track acceptance rate, confidence drift and category drift from the data <code>ml_predictions</code> already records.</p></div>
+      <div class="ph"><div class="hd"><h3>Phase 5: hardening</h3><span class="tag plan">Future</span></div><p>Rate limiting, refresh tokens, httpOnly sessions, checking every number in LLM replies, OpenTelemetry, and CI/CD with preview environments.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- RESUME -->
+<section class="block" id="resume" data-dot="Resume">
+  <div class="wrap">
+    <div class="shead">
+      <div><span class="eyebrow">Resume version</span><h2>Ready <em>to paste</em></h2></div>
+      <p>Only claims that can be checked: counts from the source, and no user, revenue or production-accuracy figures.</p>
+    </div>
+    <div class="resume">
+      <div class="rcard"><div><h4>Resume bullets</h4><ul id="r-bullets">
+        <li>Built Finora, a full-stack personal finance platform (React/TypeScript, FastAPI, PostgreSQL, Docker) with ~60 REST endpoints, a layered router → service → repository architecture that enforces per-user data isolation (covered by tests), and CI that checks Alembic migrations apply and roll back cleanly on PostgreSQL.</li>
+        <li>Designed an ML transaction categoriser (word + character TF-IDF → Logistic Regression) with shared training/serving preprocessing, confidence-gated auto-apply, token-level explanations and a loop that feeds user corrections back into retraining. Added MAD z-score + Isolation Forest anomaly detection and exponential-smoothing forecasts that decline to forecast when there isn't enough history.</li>
+        <li>Built a grounded AI assistant where 13 typed retrieval tools compute every figure from PostgreSQL and an LLM only rephrases verified facts, with a deterministic fallback that returns the same numbers. Also built an OpenCV + Tesseract receipt OCR pipeline with per-field confidence and user review before anything is saved.</li>
+      </ul></div><button class="copy" type="button" data-copy="r-bullets">Copy</button></div>
+      <div class="rcard"><div><h4>Short description</h4><p id="r-short">Finora is an AI-assisted personal finance platform that categorises transactions with an explainable ML model, flags unusual spending, forecasts cash flow, scores financial health and scans receipts. The backend computes every figure; a language model only rephrases verified results. Live: https://finora-ai-personal-finance.vercel.app/</p></div><button class="copy" type="button" data-copy="r-short">Copy</button></div>
+    </div>
+  </div>
+</section>
+
+<section class="closing">
+  <div class="wrap">
+    <h2>Every number can be traced to <em>the code that produced it.</em></h2>
+    <p>Finora is a portfolio project built to production standards: layered services, reversible migrations, explainable ML and an AI layer that isn't trusted to supply facts.</p>
+    <div class="cta">
+      <a class="btn btn-red mag" href="https://github.com/Divyanshi12coder/finora-ai-personal-finance" target="_blank" rel="noopener"><svg><use href="#i-github"/></svg>Read the source</a>
+      <a class="btn btn-ghost mag live" href="https://finora-ai-personal-finance.vercel.app/" target="_blank" rel="noopener"><span class="pulse-dot"></span>Open the live app</a>
+      <a class="btn btn-ghost mag" href="https://github.com/Divyanshi12coder" target="_blank" rel="noopener">More from Divyanshi</a>
+    </div>
+  </div>
+</section>
+<footer><div class="wrap"><span>Built by Divyanshi · Full-Stack + ML Engineer · <a href="https://finora-ai-personal-finance.vercel.app/" target="_blank" rel="noopener" style="color:#fff">finora-ai-personal-finance.vercel.app</a></span><span>Educational insights only, not financial advice. Screenshots show fictional seeded data.</span></div></footer>
+
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Screenshot preview">
+  <button type="button" id="lbClose" aria-label="Close preview">×</button>
+  <div><img id="lbImg" alt=""><p id="lbCap"></p></div>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var $ = function(s, r){ return (r||document).querySelector(s); };
+  var $$ = function(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+
+  /* ---------- hero canvas: flowing ledger lines ---------- */
+  var cv = $('#heroCanvas'), ctx = cv.getContext('2d'), W, H, dpr, t0 = performance.now();
+  function size(){ dpr = Math.min(window.devicePixelRatio||1, 2); W = cv.clientWidth; H = cv.clientHeight; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+  var lines = [0,1,2,3,4,5].map(function(i){ return {y:.35+i*.1, a:18+i*6, f:.004+i*.0007, s:.00025+i*.00006, c:i===2?'rgba(230,57,70,.55)':'rgba(140,175,230,'+(.14+i*.03)+')', w:i===2?2:1.2}; });
+  function draw(now){
+    var t = (now - t0);
+    ctx.clearRect(0,0,W,H);
+    lines.forEach(function(L, i){
+      ctx.beginPath();
+      for (var x = 0; x <= W; x += 8){
+        var y = H*L.y + Math.sin(x*L.f + t*L.s*6) * L.a + Math.sin(x*L.f*2.3 - t*L.s*4 + i) * L.a*.4;
+        x === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle = L.c; ctx.lineWidth = L.w; ctx.stroke();
+      // travelling "transaction" dots
+      for (var k = 0; k < 3; k++){
+        var px = ((t*.05*(1+i*.15) + k*W/3 + i*90) % (W+40)) - 20;
+        var py = H*L.y + Math.sin(px*L.f + t*L.s*6) * L.a + Math.sin(px*L.f*2.3 - t*L.s*4 + i) * L.a*.4;
+        var out = (i === 2 && k === 1);
+        ctx.beginPath(); ctx.arc(px, py - (out ? 26 : 0), out ? 4 : 2.2, 0, Math.PI*2);
+        ctx.fillStyle = out ? '#E63946' : 'rgba(220,232,250,.8)'; ctx.fill();
+        if (out){ ctx.beginPath(); ctx.arc(px, py-26, 10 + (t/60 % 14), 0, Math.PI*2); ctx.strokeStyle = 'rgba(230,57,70,'+(.5 - (t/60 % 14)/28)+')'; ctx.lineWidth = 1.5; ctx.stroke(); }
+      }
+    });
+    if (!reduce && heroVisible) raf = requestAnimationFrame(draw);
+  }
+  var raf, heroVisible = true;
+  size(); draw(performance.now());
+  window.addEventListener('resize', function(){ size(); if (reduce) draw(performance.now()); });
+  new IntersectionObserver(function(e){ heroVisible = e[0].isIntersecting; if (heroVisible && !reduce){ cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); } }).observe($('.hero'));
+
+  /* ---------- rotating phrase ---------- */
+  var phrases = ['categorises noisy bank narrations','flags spending that is unusual for you','forecasts cash flow with honest intervals','scans receipts, then lets you check them','answers questions from verified data'];
+  var rot = $('#rot'), pi = 0;
+  if (!reduce) setInterval(function(){
+    pi = (pi+1) % phrases.length; var target = phrases[pi], cur = rot.textContent;
+    var del = setInterval(function(){
+      cur = cur.slice(0,-1); rot.textContent = cur;
+      if (!cur){ clearInterval(del); var i = 0; var typ = setInterval(function(){ rot.textContent = target.slice(0, ++i); if (i >= target.length) clearInterval(typ); }, 32); }
+    }, 16);
+  }, 3600);
+
+  /* ---------- nav, progress, back to top, scrollspy ---------- */
+  var nav = $('#nav'), bar = $('#progress'), top = $('#totop');
+  var sections = $$('[data-dot]');
+  var dots = $('#dots');
+  sections.forEach(function(s){ var a = document.createElement('a'); a.href = '#'+s.id; a.setAttribute('aria-label', s.dataset.dot); a.innerHTML = '<span>'+s.dataset.dot+'</span>'; dots.appendChild(a); });
+  var dotLinks = $$('a', dots), navLinks = $$('#navLinks a');
+  function onScroll(){
+    var h = document.documentElement, y = h.scrollTop, max = h.scrollHeight - h.clientHeight;
+    bar.style.transform = 'scaleX('+(max>0 ? y/max : 0)+')';
+    nav.classList.toggle('solid', y > 40);
+    top.classList.toggle('show', y > 900);
+    var cur = null;
+    sections.forEach(function(s){ if (s.getBoundingClientRect().top < innerHeight*.4) cur = s.id; });
+    dotLinks.forEach(function(a){ a.classList.toggle('on', a.getAttribute('href') === '#'+cur); });
+    navLinks.forEach(function(a){ var id = a.getAttribute('href').slice(1); a.classList.toggle('on', id === cur || (cur === 'ml-detail' && id === 'ml')); });
+    pinned(); timeline(); story();
+  }
+  top.addEventListener('click', function(){ window.scrollTo({top:0, behavior: reduce ? 'auto' : 'smooth'}); });
+
+  /* ---------- hero tilt + magnetic buttons ---------- */
+  var stage = $('#stage'), tilt = $('#tilt');
+  if (!reduce && matchMedia('(min-width: 961px) and (hover: hover)').matches){
+    stage.addEventListener('pointermove', function(e){ var r = stage.getBoundingClientRect(), x = (e.clientX-r.left)/r.width-.5, y = (e.clientY-r.top)/r.height-.5; tilt.style.transform = 'rotateY('+(-10+x*12)+'deg) rotateX('+(5-y*10)+'deg)'; });
+    stage.addEventListener('pointerleave', function(){ tilt.style.transform = ''; });
+    $$('.mag').forEach(function(b){
+      b.addEventListener('pointermove', function(e){ var r = b.getBoundingClientRect(); b.style.transform = 'translate('+((e.clientX-r.left-r.width/2)*.18)+'px,'+((e.clientY-r.top-r.height/2)*.28)+'px)'; });
+      b.addEventListener('pointerleave', function(){ b.style.transform = ''; });
+    });
+    /* 3D tilt + spotlight cards */
+    $$('.tilt').forEach(function(c){
+      c.addEventListener('pointermove', function(e){ var r = c.getBoundingClientRect(), x = (e.clientX-r.left)/r.width, y = (e.clientY-r.top)/r.height;
+        c.style.transform = 'perspective(800px) rotateY('+((x-.5)*8)+'deg) rotateX('+((.5-y)*8)+'deg) translateY(-4px)';
+        c.style.setProperty('--mx', (x*100)+'%'); c.style.setProperty('--my', (y*100)+'%'); });
+      c.addEventListener('pointerleave', function(){ c.style.transform = ''; });
+    });
+    var th = $('#thesis');
+    th.addEventListener('pointermove', function(e){ var r = th.getBoundingClientRect(); th.style.setProperty('--tx', (e.clientX-r.left)+'px'); th.style.setProperty('--ty', (e.clientY-r.top)+'px'); });
+  }
+
+  /* ---------- reveal (only for things below the fold at load) ---------- */
+  var revealTargets = $$('.shead, .flip, .feat, .panel, .sec .it, .tbl, .lesson, .ph, .rcard, .dnode, .job, .compare, .chat, .seq .r, .paper-wrap, .parsed, .api, .gaps, .thesis');
+  if (!reduce && 'IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){ entries.forEach(function(en){ if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } }); }, {rootMargin:'0px 0px -8% 0px'});
+    revealTargets.forEach(function(el){
+      if (el.closest('.hs')) return;
+      if (el.getBoundingClientRect().top > innerHeight){
+        var sib = el.parentElement ? Array.prototype.indexOf.call(el.parentElement.children, el) : 0;
+        el.style.setProperty('--d', (Math.min(sib,6)*0.06)+'s');
+        el.classList.add('pre'); io.observe(el);
+      }
+    });
+  }
+
+  /* ---------- count up (only when first scrolled into view) ---------- */
+  if (!reduce){
+    var cio = new IntersectionObserver(function(entries){ entries.forEach(function(en){
+      if (!en.isIntersecting) return; cio.unobserve(en.target);
+      var el = en.target, end = +el.dataset.count, s = performance.now();
+      (function step(n){ var p = Math.min((n-s)/1200, 1), e = 1-Math.pow(1-p, 3); el.textContent = Math.round(end*e); if (p < 1) requestAnimationFrame(step); })(s);
+    }); }, {threshold:.6});
+    $$('[data-count]').forEach(function(el){ if (el.getBoundingClientRect().top > innerHeight) cio.observe(el); });
+  }
+
+  /* ---------- carousel ---------- */
+  var slides = [
+    ['dashboard','Dashboard','Net position, income, expenses, savings rate and budget remaining, all computed from the ledger when the page loads.'],
+    ['transactions','Transactions','The classifier suggests a category as the user types, with confidence and alternatives.'],
+    ['insights','Insights','Deterministic findings, each with the reason it matters and a suggested action. Unusual spending is flagged with its reason.'],
+    ['forecast','Forecast','History is drawn solid and the projection dashed inside an 80% prediction band.'],
+    ['ai-assistant','AI assistant','Running with no API key, in deterministic mode. The three data lookups are expanded under the answer.'],
+    ['budget-recommendations','Budget recommendations','Suggested limits based on the user\'s own history, with the monthly series and a written explanation.'],
+    ['budget','Budgets','Spending against each budget is recomputed from transactions every time the page loads.'],
+    ['analytics','Analytics','Breakdowns by category, merchant, day, weekday and month, plus recurring-charge detection.'],
+    ['goals','Goals','A ledger of contributions and a completion date projected from the actual saving pace.'],
+    ['landing-page','Landing page','The public entry point to the app.']
+  ];
+  var cs = $('#carStage'), cd = $('#carDots'), cur = 0, n = slides.length, timer, barAnim;
+  slides.forEach(function(s, i){
+    var d = document.createElement('div'); d.className = 'slide'; d.dataset.i = i;
+    d.innerHTML = '<div class="frame"><div class="bar"><i></i><i></i><i></i></div><img src="docs/images/'+s[0]+'.png" alt="'+s[1]+' screen" width="1440" height="900" '+(i>1?'loading="lazy"':'')+'></div>';
+    d.addEventListener('click', function(){ if (dragMoved) return; if (i === cur) openLb(d.querySelector('img'), s[1]+': '+s[2]); else go(i); });
+    cs.appendChild(d);
+    var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', 'Show '+s[1]); b.addEventListener('click', function(){ go(i); }); cd.appendChild(b);
+  });
+  var slideEls = $$('.slide', cs), dotEls = $$('button', cd);
+  function layout(){
+    var narrow = innerWidth < 700;
+    slideEls.forEach(function(el, i){
+      var d = i - cur; if (d > n/2) d -= n; if (d < -n/2) d += n;
+      var a = Math.abs(d);
+      var tx = narrow ? d*104 : d*58, sc = narrow ? 1 : 1 - Math.min(a,3)*.14, ry = narrow ? 0 : -d*16, tz = narrow ? 0 : -a*120;
+      el.style.transform = 'translateX(calc(-50% + '+tx+'%)) translateZ('+tz+'px) rotateY('+ry+'deg) scale('+sc+')';
+      el.style.opacity = a > 2 ? 0 : (a === 0 ? 1 : (narrow ? 0 : .55 - (a-1)*.2));
+      el.style.filter = a === 0 ? 'none' : 'saturate(.6)';
+      el.style.zIndex = 10 - a; el.style.pointerEvents = a > 1 ? 'none' : 'auto';
+      el.classList.toggle('active', a === 0);
+      el.setAttribute('aria-hidden', a !== 0);
+    });
+    dotEls.forEach(function(b, i){ b.setAttribute('aria-current', i === cur); });
+    $('#carTitle').textContent = slides[cur][1]; $('#carText').textContent = slides[cur][2];
+  }
+  function go(i){ cur = (i+n) % n; layout(); restart(); }
+  function restart(){
+    clearTimeout(timer); var fill = $('#carBar');
+    if (barAnim) barAnim.cancel();
+    if (reduce || paused) { fill.style.width = '0'; return; }
+    barAnim = fill.animate([{width:'0%'},{width:'100%'}], {duration:5200, easing:'linear', fill:'forwards'});
+    timer = setTimeout(function(){ go(cur+1); }, 5200);
+  }
+  var paused = false, car = $('#carousel');
+  car.addEventListener('pointerenter', function(){ paused = true; restart(); });
+  car.addEventListener('pointerleave', function(){ paused = false; restart(); });
+  $('#carPrev').addEventListener('click', function(){ go(cur-1); });
+  $('#carNext').addEventListener('click', function(){ go(cur+1); });
+  car.addEventListener('keydown', function(e){ if (e.key === 'ArrowLeft') go(cur-1); if (e.key === 'ArrowRight') go(cur+1); });
+  var sx = null, dragMoved = false;
+  cs.addEventListener('pointerdown', function(e){ sx = e.clientX; dragMoved = false; });
+  window.addEventListener('pointerup', function(e){ if (sx === null) return; var dx = e.clientX - sx; if (Math.abs(dx) > 40){ dragMoved = true; go(cur + (dx < 0 ? 1 : -1)); setTimeout(function(){ dragMoved = false; }, 50); } sx = null; });
+  window.addEventListener('resize', layout);
+  layout();
+  new IntersectionObserver(function(e){ if (e[0].isIntersecting) restart(); else { clearTimeout(timer); if (barAnim) barAnim.pause(); } }).observe(car);
+
+  /* ---------- flip cards: tap support ---------- */
+  $$('.flip').forEach(function(f){
+    f.addEventListener('click', function(){ if (matchMedia('(hover: none)').matches) f.classList.toggle('on'); });
+    f.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); f.classList.toggle('on'); } });
+  });
+
+  /* ---------- architecture scrollytelling ---------- */
+  var ssteps = $$('.sstep');
+  function story(){
+    var best = null, bestD = 1e9, mid = innerHeight*.45;
+    ssteps.forEach(function(s){ var r = s.getBoundingClientRect(), d = Math.abs(r.top + r.height/2 - mid); if (d < bestD){ bestD = d; best = s; } });
+    ssteps.forEach(function(s){ s.classList.toggle('on', s === best); });
+    $$('.layer').forEach(function(l){ l.classList.toggle('lit', best && l.id === best.dataset.layer); });
+  }
+
+  /* ---------- pinned horizontal pipeline ---------- */
+  var hs = $('#ml'), track = $('#hsTrack'), hsBar = $('#hsBar'), pinOn = false;
+  function setupPin(){
+    pinOn = !reduce && innerWidth > 900 && innerHeight > 620;
+    hs.classList.toggle('static', !pinOn);
+    if (pinOn){ var dist = track.scrollWidth - innerWidth; hs.style.height = (innerHeight + Math.max(dist,0) + 120) + 'px'; }
+    else { hs.style.height = ''; track.style.transform = ''; }
+    pinned();
+  }
+  function pinned(){
+    if (!pinOn) return;
+    var r = hs.getBoundingClientRect(), total = hs.offsetHeight - innerHeight;
+    var p = Math.min(Math.max(-r.top / total, 0), 1), dist = track.scrollWidth - innerWidth;
+    track.style.transform = 'translate3d('+(-p*Math.max(dist,0))+'px,0,0)';
+    hsBar.style.width = (p*100)+'%';
+  }
+  window.addEventListener('resize', setupPin);
+
+  /* ---------- confidence demo ---------- */
+  var ex = {
+    a:{q:'"AMAZONIN prime video subscription"', c:'Entertainment', p:88.10, v:'Applied automatically and logged to <code>ml_predictions</code>.'},
+    b:{q:'"AMAZONIN laptop sleeve order"', c:'Shopping', p:34.53, v:'Below the 45% threshold, so it\'s shown as a suggestion for the user to confirm.'}
+  };
+  function show(k){
+    var d = ex[k];
+    $('#ex-a').setAttribute('aria-pressed', k==='a'); $('#ex-b').setAttribute('aria-pressed', k==='b');
+    $('#t-q').textContent = d.q; $('#t-c').textContent = d.c; $('#t-p').textContent = d.p.toFixed(2)+'%';
+    $('#c-cat').textContent = d.c; $('#c-pct').textContent = d.p.toFixed(2)+'%';
+    var f = $('#c-fill'); f.style.width = d.p+'%'; f.classList.toggle('low', d.p < 45);
+    var v = $('#c-verdict'); v.className = 'verdict '+(d.p < 45 ? 'ask' : 'ok');
+    v.innerHTML = '<svg><use href="'+(d.p < 45 ? '#i-alert' : '#i-check')+'"/></svg><span>'+d.v+'</span>';
+  }
+  $('#ex-a').addEventListener('click', function(){ show('a'); });
+  $('#ex-b').addEventListener('click', function(){ show('b'); });
+
+  /* ---------- chat replay ---------- */
+  var chatBody = $('#chatBody'), finalHTML = chatBody.innerHTML, playing = false;
+  function playChat(){
+    if (reduce || playing) return; playing = true;
+    var parts = $$(':scope > *', chatBody).map(function(n){ return n.outerHTML; });
+    chatBody.innerHTML = '';
+    var add = function(html){ var t = document.createElement('div'); t.innerHTML = html; var el = t.firstElementChild; el.style.animation = 'rise .45s both'; chatBody.appendChild(el); return el; };
+    setTimeout(function(){ add(parts[0]); }, 200);
+    setTimeout(function(){
+      var tl = add('<div class="tl"></div>');
+      var calls = ['get_top_merchants()','get_category_spending()','get_monthly_spending()'];
+      calls.forEach(function(c, i){ setTimeout(function(){ var x = document.createElement('code'); x.innerHTML = '<b>✓</b> '+c; tl.appendChild(x); }, i*420); });
+    }, 800);
+    setTimeout(function(){ var ty = add('<div class="typing"><i></i><i></i><i></i></div>'); setTimeout(function(){ ty.remove(); add(parts[2]); playing = false; }, 1100); }, 2300);
+  }
+  $('#replay').addEventListener('click', playChat);
+  if (!reduce){
+    var chatEl = $('#chat');
+    if (chatEl.getBoundingClientRect().top > innerHeight){
+      var chio = new IntersectionObserver(function(e){ if (e[0].isIntersecting){ chio.disconnect(); playChat(); } }, {threshold:.45}); chio.observe(chatEl);
+    }
+  }
+
+  /* ---------- compare slider ---------- */
+  var cmp = $('#compare'), rng = $('#cmpRange');
+  rng.addEventListener('input', function(){ cmp.style.setProperty('--pos', rng.value+'%'); });
+
+  /* ---------- API explorer ---------- */
+  var API = {
+    'Auth':[['POST','/auth/register','Create an account (201)'],['POST','/auth/login','Returns a JWT access token'],['POST','/auth/logout','Logged server-side; the token is discarded by the client'],['GET','/auth/me','Current profile'],['PATCH','/auth/me','Update profile'],['POST','/auth/onboarding','Income, expenses, targets'],['POST','/auth/change-password',''],['POST','/auth/forgot-password','Same response whether or not the email exists'],['POST','/auth/reset-password','Hashed, single-use token, valid 30 minutes']],
+    'Transactions':[['GET','/transactions','Filter, search, whitelisted sort'],['POST','/transactions','Create; logs the ML prediction'],['GET','/transactions/{id}',''],['PUT','/transactions/{id}','Changing the category records a correction'],['DELETE','/transactions/{id}',''],['POST','/transactions/bulk-delete',''],['POST','/transactions/categorize-preview','Live category, confidence and tokens'],['POST','/transactions/{id}/anomaly-feedback','Mark as confirmed, expected or ignored'],['GET','/transactions/payment-methods',''],['GET','/categories',''],['POST','/categories',''],['PATCH','/categories/{id}',''],['DELETE','/categories/{id}',''],['GET','/ml/categorizer-status','Acceptance rate and pending corrections']],
+    'Budgets':[['GET','/budgets',''],['POST','/budgets',''],['GET','/budgets/current','Spend computed on each request'],['GET','/budgets/recommendations','Needs at least 2 months of history'],['POST','/budgets/recommendations/apply',''],['GET','/budgets/{id}',''],['PUT','/budgets/{id}',''],['DELETE','/budgets/{id}','']],
+    'Analytics':[['GET','/dashboard','Summary metrics and charts'],['GET','/analytics/spending','Category, merchant, daily, weekday, monthly'],['GET','/forecast','Model depends on history; none below 3 months'],['GET','/health-score','Six weighted components'],['GET','/anomalies','Flags with reasons']],
+    'Insights':[['GET','/insights',''],['POST','/insights/generate','Runs 8 detectors; safe to repeat'],['POST','/insights/{id}/read',''],['POST','/insights/{id}/dismiss','']],
+    'Goals':[['GET','/goals',''],['POST','/goals',''],['GET','/goals/summary',''],['GET','/goals/{id}',''],['PUT','/goals/{id}',''],['POST','/goals/{id}/contributions','Contribution ledger'],['DELETE','/goals/{id}','']],
+    'Receipts':[['GET','/receipts/ocr-status','Is Tesseract installed?'],['GET','/receipts',''],['POST','/receipts/upload','Size, type and magic-byte checks'],['POST','/receipts/{id}/process','Preprocess → OCR → parse'],['GET','/receipts/{id}',''],['GET','/receipts/{id}/image',''],['PATCH','/receipts/{id}','User corrects fields'],['POST','/receipts/{id}/confirm','Creates the transaction'],['DELETE','/receipts/{id}','']],
+    'AI':[['GET','/ai/status','Which mode is active: llm or deterministic'],['GET','/ai/suggestions',''],['POST','/ai/chat','Route → tools → phrase'],['GET','/ai/conversations',''],['GET','/ai/conversations/{id}',''],['DELETE','/ai/conversations/{id}','']],
+    'System':[['GET','/health','Database, model, OCR and AI status']]
+  };
+  var tabs = $('#apiTabs'), list = $('#apiList');
+  function renderApi(name){
+    $$('button', tabs).forEach(function(b){ b.setAttribute('aria-selected', b.dataset.k === name); });
+    list.innerHTML = '';
+    API[name].forEach(function(r, i){ var li = document.createElement('li'); li.style.animationDelay = (i*.03)+'s';
+      li.innerHTML = '<span class="m '+r[0]+'">'+r[0]+'</span><span class="p">/api'+r[1]+'</span>'+(r[2] ? '<span class="d">'+r[2]+'</span>' : ''); list.appendChild(li); });
+  }
+  Object.keys(API).forEach(function(k){ var b = document.createElement('button'); b.type = 'button'; b.setAttribute('role','tab'); b.dataset.k = k; b.textContent = k+' · '+API[k].length; b.addEventListener('click', function(){ renderApi(k); }); tabs.appendChild(b); });
+  renderApi('Transactions');
+
+  /* ---------- deploy tabs + CI run ---------- */
+  $$('.dtabs button').forEach(function(b){ b.addEventListener('click', function(){
+    $$('.dtabs button').forEach(function(x){ x.setAttribute('aria-selected', x === b); });
+    $('#tab-local').hidden = b.dataset.tab !== 'local'; $('#tab-prod').hidden = b.dataset.tab !== 'prod';
+  }); });
+  new IntersectionObserver(function(e, o){ if (e[0].isIntersecting){ $('#ci').classList.add('run'); o.disconnect(); } }, {threshold:.5}).observe($('#ci'));
+
+  /* ---------- challenge scroller ---------- */
+  var sc = $('#cscroll');
+  function step(dir){ var card = sc.querySelector('.ch'); sc.scrollBy({left: dir*(card.offsetWidth+16), behavior: reduce ? 'auto' : 'smooth'}); }
+  $('#csPrev').addEventListener('click', function(){ step(-1); });
+  $('#csNext').addEventListener('click', function(){ step(1); });
+  var dragX = null, startLeft = 0;
+  sc.addEventListener('pointerdown', function(e){ if (e.pointerType !== 'mouse') return; dragX = e.clientX; startLeft = sc.scrollLeft; sc.classList.add('drag'); });
+  window.addEventListener('pointermove', function(e){ if (dragX === null) return; sc.scrollLeft = startLeft - (e.clientX - dragX); });
+  window.addEventListener('pointerup', function(){ if (dragX === null) return; dragX = null; sc.classList.remove('drag'); });
+
+  /* ---------- roadmap timeline fill ---------- */
+  var tl = $('#tline'), tfill = $('#tfill'), phs = $$('.ph');
+  function timeline(){
+    var r = tl.getBoundingClientRect(), p = Math.min(Math.max((innerHeight*.6 - r.top) / r.height, 0), 1);
+    tfill.style.height = (p*(r.height-12))+'px';
+    phs.forEach(function(ph){ ph.classList.toggle('on', ph.getBoundingClientRect().top < innerHeight*.6); });
+  }
+
+  /* ---------- lightbox ---------- */
+  var lb = $('#lb'), lbImg = $('#lbImg'), lbCap = $('#lbCap'), last = null;
+  function openLb(img, cap){ last = document.activeElement; lbImg.src = img.src; lbImg.alt = img.alt; lbCap.textContent = cap || ''; lb.hidden = false; $('#lbClose').focus(); }
+  function closeLb(){ lb.hidden = true; if (last) last.focus(); }
+  $$('.zoom').forEach(function(z){ z.addEventListener('click', function(){ openLb(z.querySelector('img'), z.dataset.cap); }); });
+  $('#lbClose').addEventListener('click', closeLb);
+  lb.addEventListener('click', function(e){ if (e.target === lb) closeLb(); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !lb.hidden) closeLb(); });
+
+  /* ---------- copy ---------- */
+  $$('.copy').forEach(function(btn){ btn.addEventListener('click', function(){
+    var el = document.getElementById(btn.dataset.copy);
+    var text = el.tagName === 'UL' ? $$('li', el).map(function(li){ return '• '+li.textContent.trim(); }).join('\n') : el.textContent.trim();
+    function done(ok){ btn.textContent = ok ? 'Copied' : 'Text selected'; setTimeout(function(){ btn.textContent = 'Copy'; }, 1600); }
+    function fallback(){ var r = document.createRange(); r.selectNodeContents(el); var s = getSelection(); s.removeAllRanges(); s.addRange(r); done(false); }
+    try { navigator.clipboard.writeText(text).then(function(){ done(true); }, fallback); } catch(e){ fallback(); }
+  }); });
+
+  document.addEventListener('scroll', onScroll, {passive:true});
+  setupPin(); onScroll();
+})();
+</script>
+
+</body>
+</html>
